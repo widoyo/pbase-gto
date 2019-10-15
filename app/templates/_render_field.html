@@ -1,0 +1,6 @@
+{% macro render_field(field) %}
+    <div class="field">
+      {{ field.label }}<br>
+      <div class="control">{{ field(**kwargs) }}</div>
+    </div>
+{% endmacro %}

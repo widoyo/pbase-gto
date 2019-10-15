@@ -1,0 +1,75 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'logger' %}
+{% block title %}Kesehatan Logger{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="/static/css/datepicker.min.css">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+	<style>
+		.hour-label th { padding: 2px !important; text-align: center;}
+    .count { font-family: monospace; padding: 2px !important; text-align: center; vertical-align: middle !important;}
+		.list-nav { display: flex; list-style: none; }
+  </style>
+{% endblock %}
+{% block content %}
+<section class="content-header">
+  <h1>Logger Sehat</h1>
+<ol class="breadcrumb">
+	<li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+	<li class="breadcrumb-item"><a href="/logger">Logger</a></li>
+	<li class="breadcrumb-item">Kesehatan</li>
+</ol>
+</section>
+<div class="uk-grid">
+  <div class="uk-width-expand">
+		<table class="table table-hover">
+      <thead>
+        <tr>
+          <th rowspan="2" style="vertical-align: middle !important; text-align: center;">Logger</th>
+          <th colspan="24" style="">
+          <ul style="margin: 0 !important" class="uk-flex-center list-nav">
+            <li style="margin-right: 40px; margin-top: 8px;"><a href="{{ url_for('logger.sehat', sampling=prev) }}">&larr; {{
+                prev.strftime('%d')}}</a></li> 
+            <li><span id="date-sampling" class="uk-text-large">{{
+                sampling.strftime('%d-%b')
+                }}</span></li>
+            <li style="margin-left: 40px; margin-top: 8px;"><a href="{{ url_for('logger.sehat', sampling=next) }}">{{
+                next.strftime('%d') }} &rarr; </a></li>
+          </ul>
+            </th>
+        </tr>
+        <tr class="hour-label">
+          {% for i in range(24) %}
+          <th>{{ i }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      {% for row in all_devices %}
+      <tr>
+        <td>
+          <a href="{{ url_for('logger.show', sn=row.device.sn) }}">{{ row.device.sn }}</a> {% if row.device.lokasi %}<i class="fas fa-map-marker-alt"></i> 
+          <span class="uk-text-small" title="{{ row.device.lokasi.nama }}">{{ row.device.lokasi.nama.split(' ')[-1]
+            }}</span>{% endif %}
+        </td>
+        {% for r in row.hourly_count %}
+        <td class="count" title="Jam {{ r[0] }}">{{ r[1] }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+  <script src="/static/js/datepicker.min.js"></script>
+  <script>
+    const picker = datepicker(document.querySelector('#date-sampling'));
+    var cols = document.getElementsByClassName('count');
+    for (var i=0; i<cols.length;i++) {
+      if (parseInt(cols[i].innerText) < 5) {
+        cols[i].classList.add('text-danger');
+      } else if (parseInt(cols[i].innerText) > 8) {
+        cols[i].classList.add('text-success');
+      } else {
+        cols[i].classList.add('text-warning');
+      }
+    }
+  </script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'pos' %}
+{% block title %}Pos {{ lokasi.nama }} - {{ super() }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<script src="https://code.highcharts.com/highcharts.js"></script>
+{% endblock %}
+{% block content %}
+<section class="content-header">
+	<h1><span class="fas fa-map-marker-alt"></span> {{ lokasi.nama }}</h1>
+<ol class="breadcrumb">
+	<li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+	<li class="breadcrumb-item"><a href="/pos">Lokasi Pos</a></li>
+	<li class="breadcrumb-item">{{ lokasi.nama }}</li>
+</ol>
+</section>
+<div class="row">
+  <div class="col">
+		<h2>Chart</h2>
+		<div id="mychart" style="width:100%; height:400px;border: solid 1px
+      #eee;"></div>
+  </div>
+  <div class="col col-md-3">
+    {% for p in periodik %}
+    {{ p[0].hour }}: {{ p[1]|sum }}-<br>
+    {% endfor %}
+  </div>
+</div>
+	<script>
+    document.addEventListener('DOMContentLoaded', drawChart('mychart'))
+    function drawChart(cnt) {
+      var thisChart = Highcharts.chart(cnt, {
+        chart: {type: 'column'},
+        xAxis: {categories: [7,8,9,10,11,12]},
+        series: [{data: [7,2,3,1,4,5]}]
+      });
+    }
+	</script>
+{% endblock content %}
+

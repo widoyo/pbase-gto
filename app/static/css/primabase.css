@@ -1,0 +1,21 @@
+h1 {
+  font-size: 24px;
+}
+.navbar {
+	background: url('/static/img/spirationdark.png');
+}
+.content-header { 
+  position: relative;
+  padding: 15px 0; 
+}
+
+.content-header > .breadcrumb { 
+  float: right; 
+  position: absolute;
+  margin-top: 0;
+  right: 0;
+  top: 20px;
+	background-color: white !important;
+	font-size: 0.8rem;
+	padding: 0;
+}

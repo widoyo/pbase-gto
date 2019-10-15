@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/primabase.css">
+    <title>{% block title %}primabase{% endblock %}</title>
+		{% block extra_head %}{% endblock %}
+  </head>
+  <body>
+		{% set active_page = active_page|default('index') -%}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+  <a class="navbar-brand" href="#">BWS Sulawesi 2</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav ml-auto">
+			<li class="nav-item">
+        <a class="nav-link" href="/"><i class="fas fa-home ml-4 mr-2"></i>Home <span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item {% if active_page == 'pos'%}active{% endif %}">
+        <a class="nav-link" href="/pos"><i class="fas fa-map-marker-alt ml-4 mr-2"></i>Lokasi Pos</a>
+      </li>
+      <li class="nav-item {% if active_page == 'logger'%}active {% endif %}dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-microchip ml-4 mr-2"></i>Logger
+        </a>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+          <a class="dropdown-item" href="/logger/sehat">Kesehatan</a>
+          <a class="dropdown-item" href="/logger">Semua</a>
+        </div>
+      </li>
+			<li class="nav-item active"><a href="/map" class="nav-link"><i class="fas fa-map ml-4 mr-2"></i>Peta</a></li>
+      <li class="nav-item dropdown ml-5">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-user mr-2"></i>{{ current_user.username }}</a>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown2">
+          <a class="dropdown-item" href="/logout">Logout</a>
+        </div>
+      </li>
+    </ul>
+  </div>
+</nav>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA==" crossorigin=""></script>
+		<div id="mymap" style="width: 100%;height: 600px;">
+    </div>
+    <script>
+	var mymap = L.map('mymap').setView([0.68, 122.5], 10);
+
+	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoid2lkb3lvIiwiYSI6ImNqcTNmNGh5NjFlMGk0Mm9iamJxdXIxaHUifQ.hxfPpTyy8g60K9baKtbvRw', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+			'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox.streets'
+	}).addTo(mymap);
+  var arrIcon = L.icon({
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    iconUrl: '/static/img/marker/marker-icon-green.png/',
+    shadowUrl: '/static/img/marker/marker-shadow.png'
+  });
+  var awlrIcon = L.icon({
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    iconUrl: '/static/img/marker/marker-icon-orange.png/',
+    shadowUrl: '/static/img/marker/marker-shadow.png'
+  });
+	var lokasi = [
+    {% for l in lokasis %}
+    { id: {{ l.id }}, nama: '{{ l.nama }}', ll: [{{ l.ll }}],
+    devices: [{% for d in l.devices %}'{{ d.sn }}'{% endfor %}], 
+    type: {% if 'AWLR' in l.nama %}'awlr'{% else %}'arr'{% endif %},
+				periodik: {sampling: '{{ l.periodik[0].sampling }}', up_since: '{{ l.periodik[0].up_s }}', {% if (l.jenis == '1' or l.jenis == '4') %}rain: {{ l.periodik[0].rain or 'null'}}{% elif l.jenis == '2' %}wlevel: {{ l.periodik[0].wlev }}{% endif %} } },
+    {% endfor %}
+  ];
+  lokasi.forEach(e => {
+    var m = L.marker(e.ll);
+    m.bindTooltip(e.nama);
+    var icon = e.type == 'arr' ? arrIcon : awlrIcon;
+    m.setIcon(icon);
+		m.bindPopup(`<div class="card">
+			<div class="card-body"><h5 class="card-title">${e.nama} <div class="badge badge-${e.type == 'awlr' ? 'danger' : 'primary'}">${e.type}</div></h5>
+			<p class="card-text"><b>Data Terbaru</b> ${e.periodik.sampling}</p></div>
+			<div class="card-body"><a href="/pos/${e.id}" class="card-link">Visit</a></div>
+	</div>`)
+    //m.bindPopup("<b><a href=/pos/" + e.id + ">" + e.nama + "</a></b>");
+    m.addTo(mymap);
+  });
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,23 @@
+{% from '_render_field.html' import render_field %}
+{% extends 'base_b.html' %}
+{% block content %}
+<section class="content-header">
+<h1>Hapus Lokasi</h1>
+<ol class="breadcrumb">
+	<li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+	<li class="breadcrumb-item"><a href="/pos">Lokasi Pos</a></li>
+	<li class="breadcrumb-item">Delete {{ pos.nama }}</li>
+</ol>
+</section>
+<div class="uk-grid-medium uk-child-width-expand" uk-grid>
+  <div class="uk-width-1-2">
+    <form style="padding: 20px" method="POST" action="">
+      {{ form.hidden_tag() }}
+			<p>Yakin akan menghapus nama Lokasi: <b>{{ pos.nama }}</b>?</p>
+      {{ form.submit(class="btn btn-danger", value="Hapus") }}&nbsp;&nbsp;<a href="../" class="">batal</a>
+    </form>
+  </div>
+  <div class="uk-width-1-2">
+  </div>
+</div>
+{% endblock %}

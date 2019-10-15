@@ -1,0 +1,133 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'logger' %}
+{% block extra_head %}
+	<style>
+.data-telemetry td { font-family: monospace; }
+	</style>
+{% endblock %}
+{% block content %}
+<section class="content-header">
+	<h1>{{ device.sn }} <small class="badge badge-{% if device.tipe == 'arr' %}primary{% else %}danger{% endif %}">{{ device.tipe|upper }}</small>
+<span class="uk-text-small"><span uk-icon="icon: location"></span> <span>{{
+    device.lokasi.nama }}</span></span></h1>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/">Home</a></li>
+	<li class="breadcrumb-item"><a href="/logger">Logger</a></li>
+	<li class="breadcrumb-item">{{ device.sn }}</li>
+</ol>
+</section>
+<div class="row">
+  <div class="col">
+		<h2>Data</h2>
+		<nav aria-label="Pagination">
+    <ul class="pagination">
+			<li class="page-item">
+				<a href="" class="page-link" aria-label="Prev"><span aria-hidden="true">&laquo;</span></a>
+			</li>
+        {%- for page in pagination.iter_pages() %}
+        {% if page %}
+          {% if page != pagination.page %}
+				<li class="page-item">
+            <a class="page-link" href="{{ url_for('logger.show', sn=device.sn, p=page) }}">{{ page }}</a>
+				</li>
+          {% else %}
+				<li class="page-item active" aria-current="page">
+            <a class="page-link" href="#" >{{ page }}</a>
+				</li>
+          {% endif %}
+        {% else %}
+          <span class=ellipsis>…</span>
+        {% endif %}
+				</li>
+      {%- endfor %}
+			<li class="page-item">
+				<a href="#" class="page-link" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+			</li>
+    </ul>
+		</nav>
+    <table class="table table-hover data-telemetry">
+			<thead>
+				<tr>
+					<th class="uk-text-center">Sampling</th>
+					<th class="uk-text-center">{% if device.tipe == 'arr' %}Hujan (mm){% elif device.tipe == 'awlr' %}TMA (M){% endif %}</th>
+					<th class="uk-text-center">Suhu</th>
+					<th class="uk-text-center">Kelembaban</th>
+					<th class="uk-text-center">Batt</th>
+					<th class="uk-text-center">Sinyal</th>
+				</tr>
+			</thead>
+			<tbody>
+    {% for i in pagination.items %}
+		<tr><td>{{ i.sampling }}</td>
+			<td class="uk-text-right">{% if device.tipe == 'arr' %}{{ i.rain }}{% elif device.tipe == 'awlr' %}{{ '%.2f'|format((i.wlev or 0)*0.01|float) }}{% endif %}</td>
+			<td class="uk-text-right">{{ '%0.1f'|format(i.temp|float) }}</td><td class="uk-text-right">{{ '%0.1f'|format(i.humi|float) }}</td>
+			<td class="uk-text-right">{{ '%0.1f'|format(i.batt|float) }}</td>
+			<td class="uk-text-right">{{ i.sq }}</td></tr>
+    {% endfor %}
+			</tbody>
+    </table>
+  </div>
+  <div class="col col-md-3">
+		<h3>Data Terakhir</h3>
+    {{ month_list|length }}
+    <h3>Konfigurasi 
+      <a class="btn btn-outline-primary btn-sm float-right" data-toggle="collapse" role="button" href=".form-edit" aria-expanded="true" aria-controls="form-edit"><span uk-toggle="target: .form-edit" class="uk-align-right">edit</span></a></h3>
+    <div {% if form.errors %}hidden{% endif %} class="show form-edit">
+      <ul class="uk-list uk-list-divider">
+				<li>Lokasi: <b><span class="">{{ device.lokasi.nama }}</span></b></li>
+          {% if device.tipe == 'arr' %}
+          <li>Tipping Factor: <span class="uk-align-right">{{ device.tipp_fac }} mm</span></li>
+          {% endif %}
+          {% if device.tipe == 'awlr' %}
+        <li>Tinggi Sonar: <span class="uk-align-right">{{ device.ting_son }} cm</span></li>
+          {% endif %}
+        <li uk-tooltip="Koreksi temperatur, bisa berisi angka minus, jika hasil baca dari logger nilainya lebih tinggi dari nilai acuan"><b>Koreksi:</b></li>
+        <li>Suhu<span class="uk-align-right">{{ device.temp_cor }}
+            &deg;C</span></li>
+        <li>Kelembaban <span class="uk-align-right">{{ device.humi_cor }} %</span></li>
+        <li>Tegangan Battery <span class="uk-align-right">{{ device.batt_cor }}
+          volt</span></li>
+      </ul>
+    </div>
+    <div class="{% if not form.errors %}collapse{% endif %} form-edit">
+      <form method="POST" action="">
+        {{ form.csrf_token }}
+        {% if form.errors %}
+        <ul>
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+          {% for error in field_errors %}
+            <li>{{ form[field_name].label }}: {{ error }}
+          {% endfor %}
+        {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="form-group">
+					<label>Lokasi: {{ form.lokasi_id(class="form-control") }}</label>
+				</div>
+				<div class="form-group">
+            {% if device.tipe == 'arr' %}
+          Tipping Factor: <span class="float-right">{{ form.tipp_fac(size=3) }} mm</span>
+            {% endif %}
+            {% if device.tipe == 'awlr' %}
+          Tinggi Sonar: <span class="float-right">{{ form.ting_son(size=3) }} cm</span>
+            {% endif %}
+				</div>
+				<p title="Koreksi temperatur, bisa berisi angka minus, jika hasil baca dari logger nilainya lebih tinggi dari nilai acuan"><strong>Koreksi</strong></p>
+					<div class="form-group">Suhu (&deg;C)<span class="float-right">{{ form.temp_cor(size=2) }}
+              </div>
+					<div class="form-group">
+					Kelembaban (%)<span class="float-right">{{ form.humi_cor(size=2)
+              }}</span>
+					</div>
+					<div class="form-group">
+          Teg. Battery (volt)<span class="float-right">{{
+              form.batt_cor(size=2) }}</span>
+					</div>
+					<div class="form-group">
+          <input type="submit" value="Simpan" class="btn btn-primary" />
+					</div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,52 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'pos' %}
+{% block title %}Semua Pos - primabase{% endblock %}
+{% block extra_head %}
+{% endblock %}
+{% block content %}
+<section class="content-header">
+<h1>Lokasi Pos <a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.add',
+_external=True) }}" role="button">Tambah</a></h1>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/">Home</a></li>
+  <li class="breadcrumb-item">Lokasi Pos</li>
+</ol>
+</section>
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th>Lokasi / Pos</th>
+			<th>Data Terakhir</th>
+			<th>On Terakhir</th>
+			<th>Banyak Data</th>
+			<th>&nbsp;</th>
+		</tr>
+	</thead>
+{% for l in all_lokasi %}
+	<tr>
+		<td><span class="fas fa-map-marker-alt"></span> <a href="{{
+    url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}info">Klimatologi{% endif %}</span></td>
+		<td class="text-right sampling" data-sampling="{{ l.periodik[0].sampling }}" data-toggle="tooltip" title="{{ l.periodik[0].sampling }}">{{ l.periodik[0].sampling }}</td>
+		<td class="text-right sampling" data-sampling="{{ l.periodik[0].up_s }}" data-toggle="tooltip" title="{{ l.periodik[0].up_s}}">{{ l.periodik[0].up_s }}</td>
+    <td class="text-right">{{ l.periodik|count }}</td>
+    <td><a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a> 
+      <a class="btn btn-outline-danger btn-sm" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a></td>
+	</tr>
+{% else %}
+kosong <a href="add">Tambah lokasi</a>
+{% endfor %}
+</table>
+{% endblock content %}
+{% block extra_foot %}
+<script src="/static/js/moment.min.js"></script>
+<script src="/static/js/id.js"></script>
+  <script>
+    $(document).ready(function() {
+			$('[data-toggle="tooltip"]').tooltip()
+			moment.locale('id');
+      $('.sampling').each(function (i, e) {
+        console.log($(e).text(moment($(e).data('sampling')).fromNow()));
+      });
+    });
+  </script>
+{% endblock %}

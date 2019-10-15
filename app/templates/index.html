@@ -1,0 +1,56 @@
+{% extends "base_b.html" %}
+{% block title %}Dashboard - {{ super() }}{% endblock %}
+{% block content %}
+<section class="content-header">
+	<h1>Dashboard</h1>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">Dashboard</li>
+</ol>
+</section>
+<div class="row">
+  <div class="col">
+		<i class="fas fa-cloud-rain float-right display-3 mr-5 text-primary"></i>
+    <h3>Hujan <a href="#" id="sejak" data-title="Lihat hujan sejak (hari)">{{ hujan_sejak }}</a></h3>
+		<p><i>Hujan yang terjadi selama {{ hujan_sejak }} lalu.</i></p>
+    <table class="table table-hover">
+    {% for tg, pos_list in hujan_list.items() %}
+    <tr><td colspan="{% if loop.first %}2{% else %}4{% endif %}"><span class="hari" data-tgl="{{ tg }}"> <span
+                                           class="text-muted ml-5
+                                           font-weight-light">{{
+                                           tg.strftime('%d %b %y') }}</span></span></td>{% if loop.first %}<td>Curah Hujan</td><td>Selama</td>{% else %}{% endif %}</tr>
+    {% for pos, hujan in pos_list.items() %}
+    <tr><th></th><td><i class="fas fa-map-marker-alt"></i> <a href="{{ url_for('pos.show', lokasi=pos.lokasi_id, sampling=tg) }}">{{ pos.lokasi.nama
+					}}</a></td><td class="text-right"><b>{{ hujan|sum|round(2) }}</b> mm</td><td><b>{{
+				hujan|count * 5 }}</b> menit</td></tr>
+    {% endfor %}
+		{% else %}
+		<p><i>Tidak ada hujan dalam <b>{{ hujan_sejak }} hari</b> terakhir.</i></p>
+    {% endfor %}
+    </table>
+  </div>
+  <div class="col col-md-6">
+    <h3 class="mb-4">Tinggi Muka Air</h3>
+  </div>
+</div>
+{% endblock %}
+{% block extra_foot %}
+<script src="/static/js/moment.min.js"></script>
+<script src="/static/js/id.js"></script>
+  <script>
+    $(document).ready(function() {
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+      });
+			moment.locale('id');
+      $('.hari').each(function (i, e) {
+        console.log($(e).prepend(moment($(e).data('tgl')).fromNow()));
+      });
+      $('#sejak').popover({
+        html: true,
+				placement: 'right',
+				content: "<form><input type='text' name='sejak' value='{{ hujan_sejak }}' size='4' class='text-right'> <button type='submit' class='btn btn-primary btn-sm'><i class='fas fa-check'></i></button> <button class='btn btn-secondary btn-sm' aria-label='Close'><i class='fas fa-times'></i></button></form>"
+      });
+    
+    });
+  </script>
+{% endblock %}

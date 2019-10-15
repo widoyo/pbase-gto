@@ -1,0 +1,39 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'logger' %}
+{% block extra_head %}
+<script src="/static/js/uikit-icons.min.js"></script>
+<script src="https://cdn.jsdelivr.net/combine/npm/moment@2.24.0,npm/moment@2.24.0/min/locales.min.js"></script>
+{% endblock %}
+{% block content %}
+<section class="content-header">
+<h1>Logger <small class="text-muted">({{ all_devices|length }})</small></h1>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/">Home</a></li>
+  <li class="breadcrumb-item">Logger</li>
+</ol>
+</section>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Logger</th>
+      <th>Tipe</th>
+      <th>Lokasi</th>
+      <th>On Terakhir</th>
+      <th>Data Terakhir</th>
+      <th>Banyak Data</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for l in all_devices %}
+    <tr>
+      <td><a href="{{ url_for('logger.show', sn=l.sn, _external=True)
+      }}"><span uk-icon="database"></span> {{ l.sn }}</a></td>
+			<td><span class="badge badge-{% if l.tipe == 'arr' %}primary{% else %}danger{% endif %}">{{ l.tipe }}</span></td>
+      <td>{{ l.lokasi.nama }}</td>
+      <td>{{ l.periodik_latest().up_s }}</td>
+      <td>{{ l.periodik_latest().sampling }}</td>
+      <td>{{ l.periodik.count() }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endblock content %}

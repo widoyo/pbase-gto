@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>primaBase</title>
+    <link rel="stylesheet" href="/static/css/uikit.min.css">
+    <script src="/static/js/uikit.min.js"></script>
+    <script src="/static/js/uikit-icons.min.js"></script>
+    {% block extra_head %}{% endblock %}
+		<style>
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+html { font-family: Montserrat, sans-serif; }
+.uk-container { margin-top: 2rem; }
+.uk-logo { color: #fff; }
+.uk-logo:hover { color: #ccc; }
+.uk-navbar-nav>li>a { color: #fff; }
+.uk-navbar-nav>li>a:hover { color: #ccc; }
+.uk-table th { font-weight: normal;color: #666; font-size: 1rem;
+  background-color: #ace;}
+.uk-table, th, td { border: solid 1px #999; }
+h1 { color: #666; }
+		</style>
+  </head>
+  <body>
+      {% if current_user.is_authenticated %}
+    <nav class="uk-navbar-container" uk-navbar style="background-color: #4c516d; color: #fff; height: 60px;">
+        <div class="uk-navbar-left">
+          <a class="uk-navbar-item uk-logo" href="/">
+            BWS Sulawesi 2
+          </a>
+        </div>
+        <div class="uk-navbar-right uk-visible@m">
+      
+        <ul class="uk-navbar-nav">
+          <li>
+		        <a class="navbar-item" href="{{ url_for('index', _external=True) }}">Dashboard</a>
+          </li>
+          <li>
+		        						<a href="">Logger</a>
+						<div class="uk-navbar-dropdown">
+							<ul class="uk-nav uk-navbar-dropdown-nav">
+								<li>
+									<a class="navbar-item" href="{{ url_for('logger.sehat', _external=True) }}">Sehat</a>
+</li>
+								<li class="uk-nav-divider"></li>
+								<li><a href="{{ url_for('logger.index', _external=True) }}">Semua Logger</a></li>
+								<li><a href="{{ url_for('pos.index', _external=True) }}">Lokasi</a></li>
+							</ul>
+						</div>
+          </li>
+          <li>
+		  <a class="navbar-item" href="{{ url_for('map', _external=True) }}">Peta</a>
+          </li>
+					<li>
+						<a href=""><span uk-icon="user"></span></a>
+						<div class="uk-navbar-dropdown">
+							<ul class="uk-nav uk-navbar-dropdown-nav">
+								<li>{{ current_user.username }}</li>
+								<li class="uk-nav-divider"></li>
+								<li><a class="" href="/logout">Logout</a></li>
+							</ul>
+						</div>
+					</li>
+        </ul>
+            </li>
+          </ul>
+              </div>
+        <div class="uk-navbar-right uk-hidden@m">
+
+        <a class="uk-navbar-toggle uk-hidden@m" uk-toggle uk-navbar-toggle-icon href="#whole-menu" style="color: #fff;"></a>
+        </div>
+      </nav>
+      <div id="whole-menu" uk-offcanvas>
+        <div class="uk-offcanvas-bar">
+          <ul class="uk-nav uk-iconnav uk-iconnav-vertical">
+            <li><a href="/">Dashboard</a></li>
+            <li class="uk-parent">
+		        	<a href="#">Logger</a>
+							<ul class="uk-nav-sub">
+								<li>
+									<a class="navbar-item" href="{{ url_for('logger.sehat', _external=True) }}">Sehat</a>
+</li>
+								<li class="uk-nav-divider"></li>
+								<li><a href="{{ url_for('logger.index', _external=True) }}">Semua Logger</a></li>
+								<li><a href="{{ url_for('pos.index', _external=True) }}">Lokasi</a></li>
+							</ul>
+							</li>
+            <li class="uk-nav-divider"></li>
+            <li><i>{{ current_user.username}}</i></li>
+            <li><a href="/logout">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+    <div class="uk-container">
+      {% block content %}
+      <h1 class="title">
+        primaBase
+      </h1>
+      <p class="subtitle">
+        Management Telemetri <strong>prinus</strong>!
+      </p>
+      {% endblock %}
+    </div>
+  </body>
+</html>

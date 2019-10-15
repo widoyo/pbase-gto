@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Data Mentah</h1>
+<ul class="uk-pagination uk-flex-center" uk-margin>
+    {%- for page in pagination.iter_pages() %}
+    {% if page %}
+      {% if page != pagination.page %}
+        <a href="{{ url_for('raw.index', p=page) }}">{{ page }}</a>
+      {% else %}
+        <strong>{{ page }}</strong>
+      {% endif %}
+    {% else %}
+      <span class=ellipsis>…</span>
+    {% endif %}
+  {%- endfor %}
+</ul>
+<ul>
+{% for i in pagination.items %}
+    <li><input type="checkbox" name="raw[]" value="{{ i.id }}"> {{ i.content.device }} {{ i.content.sampling }}</li>
+{% endfor %}
+</ul>
+{% endblock %}
