@@ -265,6 +265,8 @@ def raw2periodic(raw):
     try:
         d = Periodik(**obj)
         db.session.add(d)
+        if device.lokasi:
+            device.lokasi.update_latest()
         db.session.commit()
     except IntegrityError:
         print(obj.get('device_sn'), obj.get('lokasi_id'), obj.get('sampling'))
