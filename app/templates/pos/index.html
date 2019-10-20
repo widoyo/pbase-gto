@@ -26,8 +26,8 @@ _external=True) }}" role="button">Tambah</a></h1>
 	<tr>
 		<td><span class="fas fa-map-marker-alt"></span> <a href="{{
     url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}info">Klimatologi{% endif %}</span></td>
-		<td class="text-right sampling" data-sampling="{{ l.periodik[0].sampling }}" data-toggle="tooltip" title="{{ l.periodik[0].sampling }}">{{ l.periodik[0].sampling }}</td>
-		<td class="text-right sampling" data-sampling="{{ l.periodik[0].up_s }}" data-toggle="tooltip" title="{{ l.periodik[0].up_s}}">{{ l.periodik[0].up_s }}</td>
+		<td class="text-right sampling" data-sampling="{{ l.latest_sampling }}" data-toggle="tooltip" title="{{ l.latest_sampling }}">{{ l.latest_sampling }}</td>
+		<td class="text-right sampling" data-sampling="{{ l.latest_up }}" data-toggle="tooltip" title="{{ l.latest_up}}">{{ l.latest_up }}</td>
     <td class="text-right">{{ l.periodik|count }}</td>
     <td><a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a> 
       <a class="btn btn-outline-danger btn-sm" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a></td>

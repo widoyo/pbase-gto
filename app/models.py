@@ -87,11 +87,14 @@ class Lokasi(db.Model):
 
     def update_latest(self):
         '''Mengupdate field latest_sampling, latest_up, latest_id'''
-        latest = self.periodik[0]
-        self.latest_sampling = latest.sampling
-        self.latest_id = latest.id
-        self.latest_up = latest.up_s
-        db.session.commit()
+        try:
+            latest = self.periodik[0]
+            self.latest_sampling = latest.sampling
+            self.latest_id = latest.id
+            self.latest_up = latest.up_s
+            db.session.commit()
+        except IndexError:
+            pass
 
     def hujan_hari(self, tanggal):
         '''Return dict(jam: hujan)

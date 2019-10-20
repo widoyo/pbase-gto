@@ -68,11 +68,16 @@ def show(lokasi):
     lokasi = Lokasi.query.filter_by(id=lokasi).first_or_404()
     if lokasi.jenis in ('1', '4'): # Pos Curah Hujan
         template_name = 'show_ch.html'
-        hourly_rain = lokasi.hujan_hari(sampling).popitem()[1].get('hourly')
+        try:
+            hourly_rain = lokasi.hujan_hari(sampling).popitem()[1].get('hourly')
+        except:
+            hourly_rain = {}
         periodik = [(k, v) for k, v in hourly_rain.items()]
     elif lokasi.jenis == '2':
         template_name = 'show_tma.html'
         periodik = [l for l in lokasi.periodik]
+    else:
+        template_name = 'show'
     return render_template('pos/' + template_name,
                            sampling=sampling,
                            lokasi=lokasi, periodik=periodik)
