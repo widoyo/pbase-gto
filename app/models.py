@@ -78,9 +78,20 @@ class Lokasi(db.Model):
     devices = relationship('Device', back_populates='lokasi')
     periodik = relationship('Periodik', back_populates='lokasi',
                             order_by="desc(Periodik.sampling)")
+    latest_sampling = db.Column(db.DateTime)
+    latest_up = db.Column(db.DateTime)
+    latest_id = db.Column(db.Integer)
 
     def __repr__(self):
         return '<Lokasi {}>'.format(self.nama)
+
+    def update_latest(self):
+        '''Mengupdate field latest_sampling, latest_up, latest_id'''
+        latest = self.periodik[0]
+        self.latest_sampling = latest.sampling
+        self.latest_id = latest.id
+        self.latest_up = latest.up_s
+        db.session.commit()
 
     def hujan_hari(self, tanggal):
         '''Return dict(jam: hujan)
