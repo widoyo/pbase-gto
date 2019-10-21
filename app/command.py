@@ -259,12 +259,14 @@ def raw2periodic(raw):
     for k, v in direct_to.items():
         obj.update({v: raw.get(k)})
     for k, v in apply_to.items():
-        corr = getattr(device, v + '_cor', 0)
-        obj.update({v: raw.get(k) + corr})
-    #print(obj.device_sn, obj.lokasi_id, obj.sampling)
+        if k in raw:
+            corr = getattr(device, v + '_cor', 0) or 0
+            obj.update({v: raw.get(k) + corr})
+
     try:
         d = Periodik(**obj)
         db.session.add(d)
+        device.update_latest()
         if device.lokasi:
             device.lokasi.update_latest()
         db.session.commit()

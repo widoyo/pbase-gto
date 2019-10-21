@@ -57,6 +57,20 @@ class Device(db.Model):
     ting_son = db.Column(db.Float) # dalam centi, tinggi sonar thd dasar sungai
 
     lokasi = relationship('Lokasi', back_populates='devices')
+    latest_sampling = db.Column(db.DateTime)
+    latest_up = db.Column(db.DateTime)
+    latest_id = db.Column(db.Integer)
+
+    def update_latest(self):
+        '''Mengupdate field latest_sampling, latest_up, latest_id'''
+        try:
+            latest = self.periodik.order_by(Periodik.id.desc()).first()
+            self.latest_sampling = latest.sampling
+            self.latest_id = latest.id
+            self.latest_up = latest.up_s
+            db.session.commit()
+        except IndexError:
+            pass
 
     def periodik_latest(self):
         return self.periodik.order_by(Periodik.id.desc()).first()

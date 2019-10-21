@@ -66,7 +66,7 @@ def show(lokasi):
     except:
         sampling = datetime.date.today()
     lokasi = Lokasi.query.filter_by(id=lokasi).first_or_404()
-    if lokasi.jenis in ('1', '4'): # Pos Curah Hujan
+    if lokasi.jenis == '1': # Pos Curah Hujan
         template_name = 'show_ch.html'
         try:
             hourly_rain = lokasi.hujan_hari(sampling).popitem()[1].get('hourly')
@@ -76,6 +76,9 @@ def show(lokasi):
     elif lokasi.jenis == '2':
         template_name = 'show_tma.html'
         periodik = [l for l in lokasi.periodik]
+    elif lokasi.jenis == '4':
+        template_name = 'show_klim.html'
+        periodik = []
     else:
         template_name = 'show'
     return render_template('pos/' + template_name,

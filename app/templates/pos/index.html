@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
 <section class="content-header">
-<h1>Lokasi Pos <a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.add',
+	<h1>Lokasi Pos <small class="text-muted">({{ all_lokasi|length }})</small> <a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.add',
 _external=True) }}" role="button">Tambah</a></h1>
 <ol class="breadcrumb">
   <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -25,7 +25,7 @@ _external=True) }}" role="button">Tambah</a></h1>
 {% for l in all_lokasi %}
 	<tr>
 		<td><span class="fas fa-map-marker-alt"></span> <a href="{{
-    url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}info">Klimatologi{% endif %}</span></td>
+		url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}info">Klimatologi{% else %}danger">?{% endif %}</span></td>
 		<td class="text-right sampling" data-sampling="{{ l.latest_sampling }}" data-toggle="tooltip" title="{{ l.latest_sampling }}">{{ l.latest_sampling }}</td>
 		<td class="text-right sampling" data-sampling="{{ l.latest_up }}" data-toggle="tooltip" title="{{ l.latest_up}}">{{ l.latest_up }}</td>
     <td class="text-right">{{ l.periodik|count }}</td>
