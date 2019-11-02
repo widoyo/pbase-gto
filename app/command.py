@@ -75,7 +75,7 @@ def build_ch():
     ret = "*Curah Hujan %s*\n" % (dari.strftime('%d %b %Y'))
     dari_fmt = dari.date() != now.date() and '%d %b %Y %H:%M' or '%H:%M'
     ret += "Akumulasi: %s sd %s (%.1f jam)\n\n" % (dari.strftime(dari_fmt),
-                                                 now.strftime('%H:%M'), 
+                                                 now.strftime('%H:%M'),
                                                  (now - dari).seconds / 3600)
     i = 1
     for pos in Lokasi.query.filter(or_(Lokasi.jenis == '1', Lokasi.jenis ==
@@ -179,8 +179,9 @@ def listen(command):
 
 def on_mqtt_message(client, userdata, msg):
     data = json.loads(msg.payload.decode('utf-8'))
-    raw2periodic(data)
+    periodik = raw2periodic(data)
     logging.debug(data.get('device'))
+    periodik2pweb(periodik)
 
 
 def subscribe_topic():
@@ -270,9 +271,20 @@ def raw2periodic(raw):
         if device.lokasi:
             device.lokasi.update_latest()
         db.session.commit()
+        return obj
     except IntegrityError:
         print(obj.get('device_sn'), obj.get('lokasi_id'), obj.get('sampling'))
         db.session.rollback()
+        return {}
+
+
+def periodik2pweb(data):
+    # sending periodik to primaweb gto using api
+    url = "https://bwssul2-gorontalo.net/api/periodik"
+    print("Post new Periodik")
+    req = requests.post(url, data=data)
+    print(req)
+    print(req.json())
 
 
 if __name__ == '__main__':
