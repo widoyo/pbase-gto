@@ -32,7 +32,8 @@ def index():
     #         else:
     #             hujan_list[tg][h.device].append(h.rain)
     for h in hujans:
-        tg = h.sampling.date() - datetime.timedelta(hours=7)
+        sample = h.sampling - datetime.timedelta(hours=7)
+        tg = sample.date()
         if tg not in hujan_list:
             hujan_list[tg] = {h.device: []}
         if h.device not in hujan_list[tg]:
