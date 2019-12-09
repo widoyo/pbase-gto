@@ -6,7 +6,10 @@
 {% endblock %}
 {% block content %}
 <section class="content-header">
-<h1>Logger <small class="text-muted">({{ all_devices|length }})</small></h1>
+<h1>Logger <small class="text-muted">({{ all_devices|length }})</small>
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('logger.sync',
+_external=True) }}" role="button">Synchronize</a>
+</h1>
 <ol class="breadcrumb">
   <li class="breadcrumb-item"><a href="/">Home</a></li>
   <li class="breadcrumb-item">Logger</li>

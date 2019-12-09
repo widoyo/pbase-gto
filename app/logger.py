@@ -4,8 +4,10 @@ logger module
 Widoyo <widoyo@gmail.com>
 '''
 import datetime
+import requests
+import os
 
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 from flask_login import login_required
 
 from sqlalchemy import text, func
@@ -23,6 +25,43 @@ def index():
     '''Showing all logger'''
     all_devices = Device.query.order_by('sn').all()
     return render_template('logger/index.html', all_devices=all_devices)
+
+@bp.route('/sync')
+@login_required
+def sync():
+    '''Showing all logger'''
+    url = "https://prinus.net/api/sensor"
+    username = os.environ['PRINUS_USER']
+    password = os.environ['PRINUS_PASS']
+    response = requests.get(url, auth=(username, password))
+
+    devices = Device.query.all()
+    raw = response.json()
+    sn_list = [key['sn'] for key in raw]
+
+    for dev in devices:
+        if dev.sn in sn_list:
+            sn_list.remove(dev.sn)
+
+    # update device and lokasi in pbase, and
+    # send new device and lokasi to pweb
+    for sn in sn_list:
+        # update device
+        device = Device(sn=f"{sn}")
+        db.session.add(device)
+        db.session.commit()
+
+        # send post data
+        post_url = f"{os.environ['PWEB_URL']}/api/device"
+        post_data = {
+            'sn': f"{sn}",
+            'id': device.id
+        }
+        res = requests.post(post_url, data=post_data)
+        result = res.json()
+        print(result)
+
+    return redirect(url_for('logger.index'))
 
 @bp.route('/sehat')
 @login_required
@@ -43,7 +82,7 @@ def sehat():
         hourly = dict([r[1:] for r in res])
         hourly_count = [(i, hourly.get(i, 0)) for i in range(0, 24)]
         all_devices.append({'device': d, 'hourly_count': hourly_count})
-    return render_template('logger/sehat.html', sampling=sampling, 
+    return render_template('logger/sehat.html', sampling=sampling,
                            all_devices=all_devices, prev=prev,
                           next=i_next)
 
@@ -88,7 +127,7 @@ def show(sn):
         device.lokasi_id = int(form.lokasi_id.data)
         db.session.commit()
         return redirect(url_for('logger.show', sn=sn))
-    return render_template('logger/show.html', device=device, form=form, 
+    return render_template('logger/show.html', device=device, form=form,
                            pagination=paginate,
                            month_list=[r[0] for r in monthly_download_list])
 

@@ -180,8 +180,8 @@ def listen(command):
 def on_mqtt_message(client, userdata, msg):
     data = json.loads(msg.payload.decode('utf-8'))
     periodik = raw2periodic(data)
-    logging.debug(data.get('device'))
     periodik2pweb(periodik)
+    logging.debug(data.get('device'))
 
 
 def subscribe_topic():
@@ -223,7 +223,8 @@ def fetch_periodic(sn, sampling):
         db.session.add(content)
         try:
             db.session.commit()
-            raw2periodic(d)
+            periodik = raw2periodic(d)
+            periodik2pweb(periodik)
         except Exception as e:
             db.session.rollback()
             print("ERROR:", e)
@@ -271,7 +272,7 @@ def raw2periodic(raw):
         if device.lokasi:
             device.lokasi.update_latest()
         db.session.commit()
-        return obj
+        return d.__dict__
     except IntegrityError:
         print(obj.get('device_sn'), obj.get('lokasi_id'), obj.get('sampling'))
         db.session.rollback()
