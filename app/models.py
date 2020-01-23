@@ -48,7 +48,7 @@ class Device(db.Model):
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'), nullable=True)
     periodik = db.relationship('Periodik',
                                primaryjoin="and_(Device.sn==Periodik.device_sn,\
-                              Periodik.sampling<=func.now())", 
+                              Periodik.sampling<=func.now())",
                                back_populates='device', lazy='dynamic')
     temp_cor = db.Column(db.Float)
     humi_cor = db.Column(db.Float)
@@ -171,3 +171,25 @@ class Periodik(db.Model):
                                              sejak).order_by(self.sampling)]
         lokasi_hari_hujan = [d.lokasi_id for d in data if (d.rain or 0) > 0]
         print(lokasi_hujan)
+
+
+class Curahujan(db.Model):
+    __tablename__ = 'curahujan'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sampling = db.Column(db.DateTime, index=True)
+    lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'), nullable=True)
+    manual = db.Column(db.Float)
+    telemetri = db.Column(db.Float)
+    petugas = db.Column(db.Integer, nullable=True)
+
+
+class Tma(db.Model):
+    __tablename__ = 'tma'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sampling = db.Column(db.DateTime, index=True)
+    lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'), nullable=True)
+    manual = db.Column(db.Float)
+    telemetri = db.Column(db.Float)
+    petugas = db.Column(db.Integer, nullable=True)

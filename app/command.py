@@ -2,6 +2,7 @@ import click
 import logging
 import requests
 import datetime
+import os
 import json
 import daemonocle
 import paho.mqtt.subscribe as subscribe
@@ -12,10 +13,11 @@ from sqlalchemy.exc import IntegrityError
 from telegram import Bot
 
 from app import app, db
-from app.models import Device, Raw, Periodik, Lokasi
+from app.models import Device, Raw, Periodik, Lokasi, Curahujan, Tma
 
 bws_sul2 = ("bwssul2", "limboto1029")
 
+PBASE_API = "https://bwssul2-gorontalo.net/api"
 URL = "https://prinus.net/api/sensor"
 MQTT_HOST = "mqtt.bbws-bsolo.net"
 MQTT_PORT = 14983
@@ -75,7 +77,7 @@ def build_ch():
     ret = "*Curah Hujan %s*\n" % (dari.strftime('%d %b %Y'))
     dari_fmt = dari.date() != now.date() and '%d %b %Y %H:%M' or '%H:%M'
     ret += "Akumulasi: %s sd %s (%.1f jam)\n\n" % (dari.strftime(dari_fmt),
-                                                 now.strftime('%H:%M'), 
+                                                 now.strftime('%H:%M'),
                                                  (now - dari).seconds / 3600)
     i = 1
     for pos in Lokasi.query.filter(or_(Lokasi.jenis == '1', Lokasi.jenis ==
@@ -179,8 +181,13 @@ def listen(command):
 
 def on_mqtt_message(client, userdata, msg):
     data = json.loads(msg.payload.decode('utf-8'))
-    raw2periodic(data)
-    logging.debug(data.get('device'))
+    try:
+        periodik = raw2periodic(data)
+        if periodik:
+            periodik2pweb(periodik)
+            logging.debug(f"{data.get('device')}, data recorded")
+    except Exception as e:
+        logging.debug(f"Error : {e}")
 
 
 def subscribe_topic():
@@ -222,11 +229,103 @@ def fetch_periodic(sn, sampling):
         db.session.add(content)
         try:
             db.session.commit()
-            raw2periodic(d)
+            periodik = raw2periodic(d)
+            periodik2pweb(periodik)
         except Exception as e:
             db.session.rollback()
             print("ERROR:", e)
         print(d.get('sampling'), d.get('temperature'))
+
+
+@app.cli.command()
+@click.option('-s', '--sampling', default='', help='Awal waktu sampling')
+def fetch_periodic_today(sampling):
+    devices = Device.query.all()
+    today = datetime.datetime.today()
+    if not sampling:
+        sampling = today.strftime("%Y/%m/%d")
+    for d in devices:
+        try:
+            print(f"Fetch Periodic for {d.sn}")
+            logging.debug(f"Fetch Periodic for {d.sn}")
+            os.system(f"flask fetch-periodic {d.sn} -s {sampling}")
+        except Exception as e:
+            print(f"!!Fetch Periodic ({d.sn}) ERROR : {e}")
+            logging.debug(f"!!Fetch Periodic ({d.sn}) ERROR : {e}")
+
+
+@app.cli.command()
+@click.option('-s', '--sampling', default='', help='Awal waktu sampling')
+def fetch_manual_ch(sampling):
+    lokasi = Lokasi.query.all()
+    today = datetime.datetime.today()
+    sampling = sampling or today.strftime("%Y-%m-%d")
+    # print(f"Fetching Manual Data at {sampling}")
+
+    ch_api = requests.get(f"{PBASE_API}/curahhujan")
+    ch = json.loads(ch_api.text)
+    ch_sorted = {}
+
+    for c in ch['data']:
+        if c['manual']['ch'] is not None:
+            ch_sorted[c['lokasi']] = {
+                'sampling': datetime.datetime.strptime(c['manual']['sampling'], "%Y-%m-%d"),
+                'ch': c['manual']['ch'],
+            }
+
+    for l in lokasi:
+        if l.nama in ch_sorted:
+            print("inserting data")
+            sampling = ch_sorted[l.nama]['sampling']
+            ch = ch_sorted[l.nama]['ch']
+            new_ch = Curahujan(
+                sampling=sampling,
+                manual=ch,
+                lokasi_id=l.id
+            )
+            db.session.add(new_ch)
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print("ERROR:", e)
+
+
+@app.cli.command()
+@click.option('-s', '--sampling', default='', help='Awal waktu sampling')
+def fetch_manual_tma(sampling):
+    lokasi = Lokasi.query.all()
+    today = datetime.datetime.today()
+    sampling = sampling or today.strftime("%Y-%m-%d")
+    # print(f"Fetching Manual Data at {sampling}")
+
+    tma_api = requests.get(f"{PBASE_API}/tma")
+    tma = json.loads(tma_api.text)
+    tma_sorted = {}
+
+    for t in tma['data']:
+        if t['manual']['tma'] is not None:
+            tma_sorted[t['lokasi']] = {
+                'samplitng': datetime.datetime.strptime(t['manual']['sampling'], "%Y-%m-%d"),
+                'tma': t['manual']['tma']
+            }
+
+    for l in lokasi:
+        if l.nama in tma_sorted:
+            print("inserting data")
+            sampling = tma_sorted[l.nama]['sampling']
+            tma = tma_sorted[l.nama]['tma']
+            new_tma = Curahujan(
+                sampling=sampling,
+                manual=tma,
+                lokasi_id=l.id
+            )
+            db.session.add(new_tma)
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print("ERROR:", e)
 
 
 def raw2periodic(raw):
@@ -270,9 +369,30 @@ def raw2periodic(raw):
         if device.lokasi:
             device.lokasi.update_latest()
         db.session.commit()
+        return obj
     except IntegrityError:
         print(obj.get('device_sn'), obj.get('lokasi_id'), obj.get('sampling'))
+        logging.debug(f"{raw.get('device')}, IntegrityError ({obj.get('lokasi_id')}, {obj.get('sampling')})")
         db.session.rollback()
+        return {}
+
+
+def periodik2pweb(data):
+    # sending periodik to primaweb gto using api
+    url = "http://localhost:8888/api/periodik"
+    logging.debug("Sending data to primaweb")
+
+    # format the datetime into string first
+    data['sampling'] = data['sampling'].strftime("%Y-%m-%d %H:%M:%S")
+    data['up_s'] = data['up_s'].strftime("%Y-%m-%d %H:%M:%S")
+    data['ts_a'] = data['ts_a'].strftime("%Y-%m-%d %H:%M:%S")
+    # logging.debug(f"Data : {data}")
+    try:
+        res = requests.post(url, data=data)
+        logging.debug(f"[{res.status_code}] : {res.text}")
+    except Exception as e:
+        logging.debug(f"Error at sending data : {e}")
+        # logging.debug(f"Data : {data}")
 
 
 if __name__ == '__main__':

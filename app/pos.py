@@ -1,9 +1,11 @@
 import datetime
+import requests
+import os
 from flask import Blueprint, render_template, abort, request, flash, redirect
 from flask_login import login_required
 
 from app import db
-from app.models import Lokasi, Periodik
+from app.models import Lokasi, Periodik, Device
 from app.forms import LokasiForm
 
 bp = Blueprint('pos', __name__, template_folder='templates')
@@ -38,6 +40,19 @@ def edit(lokasi_id):
         pos.nama = form.nama.data
         pos.ll = form.ll.data
         db.session.commit()
+
+        # sent post to update pweb
+        post_url = f"{os.environ['PWEB_URL']}/api/lokasi"
+        post_data = {
+            'id': pos.id,
+            'nama': pos.nama,
+            'll': pos.ll,
+            'jenis': pos.jenis
+        }
+        res = requests.post(post_url, data=post_data)
+        result = res.json()
+        print(result)
+
         flash("Sukses mengedit")
         return redirect('/pos')
     return render_template('pos/edit.html', form=form)
@@ -52,6 +67,19 @@ def add():
         lokasi = Lokasi(nama=form.nama.data, ll=form.ll.data)
         db.session.add(lokasi)
         db.session.commit()
+
+        # sent post to update pweb
+        post_url = f"{os.environ['PWEB_URL']}/api/lokasi"
+        post_data = {
+            'id': lokasi.id,
+            'nama': lokasi.nama,
+            'll': lokasi.ll,
+            'jenis': lokasi.jenis
+        }
+        res = requests.post(post_url, data=post_data)
+        result = res.json()
+        print(result)
+
         flash("Sukses menambah Lokasi Pos")
         return redirect('/pos')
     return render_template('pos/add.html', form=form)
@@ -80,8 +108,8 @@ def show(lokasi):
         template_name = 'show_klim.html'
         periodik = []
     else:
-        template_name = 'show'
+        template_name = 'show.html'
+        periodik = []
     return render_template('pos/' + template_name,
                            sampling=sampling,
                            lokasi=lokasi, periodik=periodik)
-

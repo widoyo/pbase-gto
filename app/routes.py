@@ -19,18 +19,28 @@ def index():
                                    Periodik.rain > 0).order_by(
                                        desc(Periodik.sampling))
     hujan_list = dict()
+    # for h in hujans:
+    #     if h.sampling.hour < 7:
+    #         tg = h.sampling.date() - datetime.timedelta(days=1)
+    #     else:
+    #         tg = h.sampling.date()
+    #     if tg not in hujan_list.keys():
+    #         hujan_list[tg] = {h.device: [h.rain]}
+    #     else:
+    #         if h.device not in hujan_list[tg]:
+    #             hujan_list[tg] = {h.device: [h.rain]}
+    #         else:
+    #             hujan_list[tg][h.device].append(h.rain)
     for h in hujans:
-        if h.sampling.hour < 7:
-            tg = h.sampling.date() - datetime.timedelta(days=1)
-        else:
-            tg = h.sampling.date()
-        if tg not in hujan_list.keys():
-            hujan_list[tg] = {h.device: [h.rain]}
-        else:
-            if h.device not in hujan_list[tg]:
-                hujan_list[tg] = {h.device: [h.rain]}
-            else:
-                hujan_list[tg][h.device].append(h.rain)
+        sample = h.sampling - datetime.timedelta(hours=7)
+        tg = sample.date()
+        if tg not in hujan_list:
+            hujan_list[tg] = {h.device: []}
+        if h.device not in hujan_list[tg]:
+            hujan_list[tg][h.device] = []
+        hujan_list[tg][h.device].append(h.rain)
+
+    print(hujan_list)
     return render_template('index.html', hujan_list=hujan_list,
                            hujan_sejak=sejak,
                            title='primaBase')
