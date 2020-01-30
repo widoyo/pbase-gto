@@ -20,6 +20,12 @@
       {{ render_field(form.nama, class='uk-input', size=15, autofocus=True) }}
       <i>Contoh: <b>ARR/MRG DAS Bolango Bone Boidu</b></i>
       <br><br>
+      {{ render_field(form.jenis, class='uk-input', id='jenis') }}
+      {% if pos.jenis == '2' %}
+        {{ render_field(form.siaga1, class='uk-input', id='siaga1') }}
+        {{ render_field(form.siaga2, class='uk-input', id='siaga2') }}
+        {{ render_field(form.siaga3, class='uk-input', id='siaga3') }}
+      {% endif %}
       {{ render_field(form.ll, class='uk-input', id='ll') }}
       <i>Contoh: <b>0.7085167,122.8554833</b></i>
       <br><br>

@@ -29,8 +29,11 @@ _external=True) }}" role="button">Tambah</a></h1>
 		<td class="text-right sampling" data-sampling="{{ l.latest_sampling }}" data-toggle="tooltip" title="{{ l.latest_sampling }}">{{ l.latest_sampling }}</td>
 		<td class="text-right sampling" data-sampling="{{ l.latest_up }}" data-toggle="tooltip" title="{{ l.latest_up}}">{{ l.latest_up }}</td>
     <td class="text-right">{{ l.periodik|count }}</td>
-    <td><a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a> 
-      <a class="btn btn-outline-danger btn-sm" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a></td>
+    <td>
+		<a class="btn btn-outline-success btn-sm" href="{{ url_for('pos.sync', lokasi_id=l.id, _external=True) }}">Update Primaweb</a>
+		<a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a>
+      	<a class="btn btn-outline-danger btn-sm" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a>
+  	</td>
 	</tr>
 {% else %}
 kosong <a href="add">Tambah lokasi</a>

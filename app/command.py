@@ -79,9 +79,16 @@ def build_ch():
     ret += "Akumulasi: %s sd %s (%.1f jam)\n\n" % (dari.strftime(dari_fmt),
                                                  now.strftime('%H:%M'),
                                                  (now - dari).seconds / 3600)
+
+    loggers = Device.query.all()
+    lokasi_ids = []
+    for l in loggers:
+        lokasi_ids.append(l.lokasi_id)
+
     i = 1
-    for pos in Lokasi.query.filter(or_(Lokasi.jenis == '1', Lokasi.jenis ==
-                                      '4')):
+    for pos in Lokasi.query.filter(or_(Lokasi.jenis == '1', Lokasi.jenis == '4')):
+        if pos.id not in lokasi_ids:
+            continue
         ret += "%s. %s" % (i, pos.nama)
         j = 1
         durasi = 0
@@ -97,6 +104,7 @@ def build_ch():
             ret += " _tidak hujan_"
         ret += "\n"
         i += 1
+    print(ret)
     return ret
 
 
@@ -104,13 +112,23 @@ def build_tma():
     ret = '\n*Tinggi Muka Air*\n\n'
     i = 1
     now = datetime.datetime.now()
+
+    loggers = Device.query.all()
+    lokasi_ids = []
+    for l in loggers:
+        lokasi_ids.append(l.lokasi_id)
+
     for pos in Lokasi.query.filter(Lokasi.jenis == '2'):
+        if pos.id not in lokasi_ids:
+            continue
+
         ret += "%s. %s" % (i, pos.nama)
         periodik = Periodik.query.filter(Periodik.lokasi_id ==
                               pos.id, Periodik.sampling <= now).order_by(desc(Periodik.sampling)).first()
         ret +=  " *TMA: %.2f Meter* jam %s\n" % (periodik.wlev * 0.01,
                                   periodik.sampling.strftime('%H:%M %d %b %Y'))
         i += 1
+    print(ret)
     return ret
 
 
@@ -120,12 +138,20 @@ def persentase_hadir_data(tgl):
 *Kehadiran Data*
 %(tgl)s (0:0 - 23:55)
 ''' % {'tgl': tgl.strftime('%d %b %Y')}
+
+    loggers = Device.query.all()
+    lokasi_ids = []
+    for l in loggers:
+        lokasi_ids.append(l.lokasi_id)
+
     pos_list = Lokasi.query.filter(Lokasi.jenis == '1')
     if pos_list.count():
         str_pos = ''
         j_data = 0
         i = 1
         for l in pos_list:
+            if l.id not in lokasi_ids:
+                continue
             banyak_data = Periodik.query.filter(Periodik.lokasi_id == l.id,
                                                 func.DATE(Periodik.sampling) == tgl).count()
             persen_data = (banyak_data/288) * 100
@@ -143,6 +169,8 @@ def persentase_hadir_data(tgl):
         j_data = 0
         persen_data = 0
         for l in pos_list:
+            if l.id not in lokasi_ids:
+                continue
             banyak_data = Periodik.query.filter(Periodik.lokasi_id == l.id,
                                                 func.DATE(Periodik.sampling) == tgl).count()
             persen_data = (banyak_data/288) * 100
@@ -160,14 +188,17 @@ def persentase_hadir_data(tgl):
         j_data = 0
         persen_data = 0
         for l in pos_list:
+            if l.id not in lokasi_ids:
+                continue
             banyak_data = Periodik.query.filter(Periodik.lokasi_id == l.id,
                                                 func.DATE(Periodik.sampling) == tgl).count()
             persen_data = (banyak_data/288) * 100
             j_data += persen_data
             str_pos += '%s. %s ' % (i, l.nama + ': *%.1f%%*\n' % (persen_data))
             i += 1
-            str_pos = '\n*Pos Klimatologi: %.1f%%*\n\n' % (j_data/(i-1)) + str_pos
+        str_pos = '\n*Pos Klimatologi: %.1f%%*\n\n' % (j_data/(i-1)) + str_pos
         out += str_pos
+    print(out)
     return out
 
 

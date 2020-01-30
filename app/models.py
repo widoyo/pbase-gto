@@ -88,7 +88,10 @@ class Lokasi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nama = db.Column(db.String(50), index=True, unique=True)
     ll = db.Column(db.String(35))
-    jenis = db.Column(db.String(1)) # 1 CH, 2 TMA, 3 Bendungan, 4 Klim
+    jenis = db.Column(db.String(1))  # 1 CH, 2 TMA, 3 Bendungan, 4 Klim
+    siaga1 = db.Column(db.Float)
+    siaga2 = db.Column(db.Float)
+    siaga3 = db.Column(db.Float)
     devices = relationship('Device', back_populates='lokasi')
     periodik = relationship('Periodik', back_populates='lokasi',
                             order_by="desc(Periodik.sampling)")

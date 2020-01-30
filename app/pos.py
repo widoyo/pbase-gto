@@ -30,6 +30,16 @@ def delete(lokasi_id):
     return render_template('pos/delete.html', pos=pos, form=form)
 
 
+@bp.route('/<lokasi_id>/sync', methods=['GET', 'POST'])
+@login_required
+def sync(lokasi_id):
+    pos = Lokasi.query.get(lokasi_id)
+
+    # sent post to update pweb
+    send2primaweb(pos)
+
+    return redirect('/pos')
+
 
 @bp.route('/<lokasi_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -39,24 +49,18 @@ def edit(lokasi_id):
     if form.validate_on_submit():
         pos.nama = form.nama.data
         pos.ll = form.ll.data
+        pos.siaga1 = form.siaga1.data
+        pos.siaga2 = form.siaga2.data
+        pos.siaga3 = form.siaga3.data
+        pos.jenis = form.jenis.data
         db.session.commit()
 
         # sent post to update pweb
-        post_url = f"{os.environ['PWEB_URL']}/api/lokasi"
-        post_data = {
-            'id': pos.id,
-            'nama': pos.nama,
-            'll': pos.ll,
-            'jenis': pos.jenis
-        }
-        res = requests.post(post_url, data=post_data)
-        result = res.json()
-        print(result)
+        send2primaweb(pos)
 
         flash("Sukses mengedit")
         return redirect('/pos')
-    return render_template('pos/edit.html', form=form)
-
+    return render_template('pos/edit.html', form=form, pos=pos)
 
 
 @bp.route('/add', methods=['GET', 'POST'])
@@ -64,21 +68,19 @@ def edit(lokasi_id):
 def add():
     form = LokasiForm()
     if form.validate_on_submit():
-        lokasi = Lokasi(nama=form.nama.data, ll=form.ll.data)
+        lokasi = Lokasi(
+            nama=form.nama.data,
+            ll=form.ll.data,
+            jenis=form.jenis.data,
+            siaga1=form.siaga1.data,
+            siaga2=form.siaga2.data,
+            siaga3=form.siaga3.data
+        )
         db.session.add(lokasi)
         db.session.commit()
 
         # sent post to update pweb
-        post_url = f"{os.environ['PWEB_URL']}/api/lokasi"
-        post_data = {
-            'id': lokasi.id,
-            'nama': lokasi.nama,
-            'll': lokasi.ll,
-            'jenis': lokasi.jenis
-        }
-        res = requests.post(post_url, data=post_data)
-        result = res.json()
-        print(result)
+        send2primaweb(lokasi)
 
         flash("Sukses menambah Lokasi Pos")
         return redirect('/pos')
@@ -113,3 +115,26 @@ def show(lokasi):
     return render_template('pos/' + template_name,
                            sampling=sampling,
                            lokasi=lokasi, periodik=periodik)
+
+
+def send2primaweb(pos):
+    # sent post to update pweb
+    try:
+        post_url = f"{os.environ['PWEB_URL']}/api/lokasi"
+        post_data = {
+            'id': pos.id,
+            'nama': pos.nama,
+            'll': pos.ll,
+            'siaga1': pos.siaga1,
+            'siaga2': pos.siaga2,
+            'siaga3': pos.siaga3,
+            'jenis': pos.jenis
+        }
+        res = requests.post(post_url, data=post_data)
+        result = res.json()
+        print("Update Sukses")
+        print(result)
+        flash("Update Sukses")
+    except Exception as e:
+        print(f"Update Error : {e}")
+        flash(f"Update Error : {e}")

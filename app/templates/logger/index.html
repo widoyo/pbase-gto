@@ -24,6 +24,7 @@ _external=True) }}" role="button">Synchronize</a>
       <th>On Terakhir</th>
       <th>Data Terakhir</th>
       <th>Banyak Data</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -36,6 +37,9 @@ _external=True) }}" role="button">Synchronize</a>
       <td>{{ l.periodik_latest().up_s }}</td>
       <td>{{ l.periodik_latest().sampling }}</td>
       <td>{{ l.periodik.count() }}</td>
+      <th>
+          <a class="btn btn-outline-success btn-sm" href="{{ url_for('logger.syncpweb', device_id=l.id, _external=True) }}">Update Primaweb</a>
+      </th>
     </tr>
 {% endfor %}
 </table>

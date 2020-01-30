@@ -52,16 +52,42 @@ def sync():
         db.session.commit()
 
         # send post data
+        try:
+            post_url = f"{os.environ['PWEB_URL']}/api/device"
+            post_data = {
+                'sn': f"{sn}",
+                'id': device.id
+            }
+            res = requests.post(post_url, data=post_data)
+            result = res.json()
+            print(result)
+        except Exception as e:
+            print(e)
+
+    return redirect(url_for('logger.index'))
+
+
+@bp.route('/<device_id>/sync')
+@login_required
+def syncpweb(device_id):
+    '''Showing all logger'''
+    log = Device.query.get(device_id)
+
+    # send post data
+    try:
         post_url = f"{os.environ['PWEB_URL']}/api/device"
         post_data = {
-            'sn': f"{sn}",
-            'id': device.id
+            'sn': f"{log.sn}",
+            'id': log.id,
+            'tipe': log.tipe
         }
         res = requests.post(post_url, data=post_data)
         result = res.json()
         print(result)
-
+    except Exception as e:
+        print(e)
     return redirect(url_for('logger.index'))
+
 
 @bp.route('/sehat')
 @login_required
