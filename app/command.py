@@ -28,6 +28,222 @@ logging.basicConfig(
         filename='/tmp/primabaselistener.log',
         level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 
+
+'''----New Code from prinus python----'''
+
+
+def getstarttime(time):
+    ''' get starting time of the data '''
+    res = time.hour < 7 and (time - datetime.timedelta(days=1)) or time
+    return res.replace(hour=7, minute=0, second=0)
+
+
+def prettydate(d):
+    diff = datetime.datetime.utcnow() - d
+    s = diff.seconds
+    if diff.days > 30:
+        return f"Lebih dari Sebulan Lalu"
+    elif diff.days > 7 and diff.days < 30:
+        return f"Lebih dari Seminggu Lalu"
+    elif diff.days >= 1 and diff.days < 7:
+        return f"{diff.days} Hari Lalu"
+    elif s < 3600:
+        return f"{round(s/60)} Menit Lalu"
+    else:
+        return f"{round(s/3600)} Jam Lalu"
+
+
+def send_telegram(bot, id, name, message, debug_text):
+    debug_text = f"Sending Telegram to {name}"
+    try:
+        bot.sendMessage(id, text=message)
+        logging.debug(f"{debug_text}")
+    except Exception as e:
+        logging.debug(f"{debug_text} Error : {e}")
+
+
+def periodik_report(time):
+    ''' Message Tenants about last 2 hour rain and water level '''
+    bot = Bot(token=app.config['PRINUSBOT_TOKEN'])
+
+    ch_report(time, bot)
+    tma_report(time, bot)
+
+    # bot.sendMessage(app.config['TELEGRAM_TEST_ID'], text="Sending 2-Hourly Reports to All Tenants")
+
+
+def ch_report(time, bot):
+    tenants = Tenant.query.order_by(Tenant.id).all()
+
+    for ten in tenants:
+        tz = ten.timezone or "Asia/Jakarta"
+        localtime = utc2local(time, tz=tz)
+        end = datetime.datetime.strptime(f"{localtime.strftime('%Y-%m-%d')} {localtime.hour}:00:00", "%Y-%m-%d %H:%M:%S")
+        start = getstarttime(end)
+
+        final = f"*Curah Hujan {end.strftime('%d %b %Y')}*\n"
+        final += f"{start.strftime('%H:%M')} - {end.strftime('%H:%M')}\n"
+        message = ""
+
+        locations = Location.query.filter(
+                                    or_(Location.tipe == '1', Location.tipe == '4'),
+                                    Location.tenant_id == ten.id).all()
+
+        i = 0
+        for pos in locations:
+            result = get_periodik_sum(pos, start, end)
+            latest = get_latest_telemetri(pos)
+
+            i += 1
+            rain = f"{round(result['rain'], 2)} mm selama {result['duration']} menit" if result['rain'] > 0 else '-'
+            message += f"\n{i}. {pos.nama} : {rain}"
+            message += f"\n     {result['percent']}%, data terakhir {latest['latest']}\n"
+
+        if message:
+            final += message
+        else:
+            final += "\nBelum Ada Lokasi yg tercatat"
+
+        send_telegram(bot, ten.telegram_info_id, ten.nama, final, f"TeleRep-send {ten.nama}")
+
+        print(f"{ten.nama}")
+        print(final)
+        print()
+
+
+def tma_report(time, bot):
+    tenants = Tenant.query.order_by(Tenant.id).all()
+
+    for ten in tenants:
+        locations = Location.query.filter(
+                                    Location.tipe == '2',
+                                    Location.tenant_id == ten.id).all()
+
+        final = f"*TMA*\n"
+        message = ""
+        i = 0
+        for pos in locations:
+            latest = get_latest_telemetri(pos)
+
+            i += 1
+            if latest['periodik']:
+                info = f"{latest['periodik'].wlev or '-'}, {latest['latest']}"
+                tgl = f"\n     ({latest['periodik'].sampling.strftime('%d %b %Y, %H:%M')})\n"
+            else:
+                info = "Belum Ada Data"
+                tgl = "\n"
+            message += f"\n{i}. {pos.nama} : {info}"
+            message += tgl
+
+        if message:
+            final += message
+        else:
+            final += "\nBelum Ada Lokasi yg tercatat"
+
+        send_telegram(bot, ten.telegram_info_id, ten.nama, final, f"TeleRep-send {ten.nama}")
+
+        print(final)
+        print()
+
+
+def get_periodik_sum(pos, start, end):
+    periodics = Periodik.query.filter(
+                                Periodik.sampling.between(start, end),
+                                Periodik.location_id == pos.id).all()
+    result = {
+        'pos': pos,
+        'rain': 0,
+        'duration': 0,
+        'percent': 0
+    }
+    for period in periodics:
+        result['rain'] += period.rain
+        result['duration'] += 5
+        result['percent'] += 1
+
+    diff = end - start
+    percent = (result['percent']/(diff.seconds/300)) * 100
+    result['percent'] = round(percent, 2)
+
+    return result
+
+
+def get_latest_telemetri(pos):
+    latest = Periodik.query.filter(Periodik.location_id == pos.id).order_by(desc(Periodik.sampling)).first()
+
+    result = {
+        'periodik': latest,
+        'lastest': ""
+    }
+    if latest:
+        result['latest'] = prettydate(latest.sampling)
+    else:
+        result['latest'] = "Belum Ada Data"
+    return result
+
+
+def periodik_count_report(time):
+    ''' Message Tenants about last day periodic counts '''
+    bot = Bot(token=app.config['PRINUSBOT_TOKEN'])
+
+    tenants = Tenant.query.order_by(Tenant.id).all()
+
+    for ten in tenants:
+        # param tz should be entered if tenant have timezone
+        # log.tenant.timezone
+        tz = ten.timezone or "Asia/Jakarta"  # "Asia/Jakarta"
+        localtime = utc2local(time, tz=tz)
+        end = datetime.datetime.strptime(f"{localtime.year}-{localtime.month}-{time.day} 23:56:00", "%Y-%m-%d %H:%M:%S")
+        start = datetime.datetime.strptime(f"{localtime.year}-{localtime.month}-{time.day} 00:00:00", "%Y-%m-%d %H:%M:%S")
+
+        final = '''*%(ten)s*\n*Kehadiran Data*\n%(tgl)s (0:0 - 23:55)
+        ''' % {'ten': ten.nama, 'tgl': start.strftime('%d %b %Y')}
+        message = ""
+
+        locations = Location.query.filter(
+                                    # Location.tipe == '1',
+                                    Location.tenant_id == ten.id).all()
+
+        i = 0
+        for pos in locations:
+            i += 1
+            result = get_periodic_arrival(pos, start, end)
+            message += f"\n{i} {pos.nama} ({result['tipe']}) : {result['percent']}%"
+
+        if message:
+            final += message
+        else:
+            final += "\nBelum Ada Lokasi yg tercatat"
+
+        send_telegram(bot, ten.telegram_info_id, ten.nama, final, f"TeleCount-send {ten.nama}")
+        print(f"{localtime} : {final}")
+        print()
+    # bot.sendMessage(app.config['TELEGRAM_TEST_ID'], text="Sending Daily Count Reports to All Tenants")
+
+
+def get_periodic_arrival(pos, start, end):
+    periodics = Periodik.query.filter(
+                                Periodik.sampling.between(local2utc(start), local2utc(end)),
+                                Periodik.location_id == pos.id).all()
+    tipe = POS_NAME[pos.tipe] if pos.tipe else "Lain-lain"
+    result = {
+        'pos': pos,
+        'tipe': tipe,
+        'percent': 0
+    }
+    for period in periodics:
+        result['percent'] += 1
+
+    diff = end - start
+    percent = (result['percent']/(diff.seconds/300)) * 100
+    result['percent'] = round(percent, 2)
+
+    return result
+
+
+'''----End of New Code from prinus python----'''
+
+
 @app.cli.command()
 @click.argument('command')
 def telegram(command):
@@ -424,6 +640,72 @@ def periodik2pweb(data):
     except Exception as e:
         logging.debug(f"Error at sending data : {e}")
         # logging.debug(f"Data : {data}")
+
+
+@app.cli.command()
+@click.option('-s', '--sampling', default='', help='Awal waktu sampling')
+def send_periodic_today(sampling):
+    # sending periodik to primaweb gto using api
+    url = "http://localhost:8888/api/periodik/bulk"
+
+    today = datetime.datetime.today()
+    datestr = sampling or today.strftime("%Y-%m-%d")
+    date = datetime.datetime.strptime(f"{datestr}", '%Y-%m-%d')
+    start = f"{date.year}-{date.month}-{date.day} 00:00:00"
+    end = f"{date.year}-{date.month}-{date.day} 23:56:00"
+
+    print(f"PeriodicBulk on {date.strftime('%d %B %Y')}\n")
+    logging.debug(f"PeriodicBulk - Sending {datestr} periodics data")
+
+    devices = Device.query.all()
+    lokasi_list = [dev.lokasi_id for dev in devices]
+    lokasis = Lokasi.query.all()
+    for lok in lokasis:
+        if lok.id not in lokasi_list:
+            continue
+
+        message = {
+            'tenant': "BWSSUL2",
+            'count': 0,
+            'data': []
+        }
+        periodics = Periodik.query.filter(
+            Periodik.lokasi_id == lok.id,
+            Periodik.sampling.between(start, end)
+        ).all()
+
+        for per in periodics:
+            message['data'].append({
+                'sampling': per.sampling.strftime("%Y-%m-%d %H:%M:%S"),
+                'device_sn': per.device_sn,
+                'lokasi_id': per.lokasi_id,
+                'sq': per.sq,
+                'temp': per.temp,
+                'humi': per.humi,
+                'batt': per.batt,
+                'rain': per.rain,
+                'wlev': per.wlev,
+                'up_s': per.up_s.strftime("%Y-%m-%d %H:%M:%S"),
+                'ts_a': per.ts_a.strftime("%Y-%m-%d %H:%M:%S"),
+                'apre': per.apre,
+                'mdpl': per.mdpl
+            })
+            message['count'] += 1
+
+        if message['count'] == 0:
+            continue
+
+        logging.debug(f"--PerBulk - Sending {lok.nama} periodics data")
+        print(f"{lok.nama}")
+        print(f"----periodic count = {message['count']}")
+        try:
+            res = requests.post(url, json=message)
+            print(f"----Success ({res.text})")
+            logging.debug(f"---- Success ({res.text})")
+        except Exception as e:
+            print(f"---- Error : {e}")
+            logging.debug(f"---- Error: {e}")
+        print()
 
 
 if __name__ == '__main__':
