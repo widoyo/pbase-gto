@@ -19,6 +19,7 @@ class LokasiForm(FlaskForm):
     jenis = RadioField('Jenis', choices=[
                             ('1', 'Hujan'),
                             ('2', 'Duga Air'),
+                            ('3', 'Kualitas Air'),
                             ('4', 'Klimatologi')
                         ], default='1')
     siaga1 = DecimalField('Siaga 1 (cm)')

@@ -22,7 +22,7 @@ URL = "https://prinus.net/api/sensor"
 MQTT_HOST = "mqtt.bbws-bsolo.net"
 MQTT_PORT = 14983
 MQTT_TOPIC = "bws-sul2"
-MQTT_CLIENT = "primabase_bwssul2"
+MQTT_CLIENT = ""
 
 logging.basicConfig(
         filename='/tmp/primabaselistener.log',
@@ -253,17 +253,21 @@ def telegram(command):
     elif command == 'test_ch_tma':
         print(info_ch_tma())
     elif command == 'info_ch':
+        logging.debug(f"Preparing Info Curah Hujan")
         info = info_ch()
         bot = Bot(token=app.config.get('BWSSUL2BOT_TOKEN'))
         bot.sendMessage(app.config.get('BWS_SUL2_TELEMETRY_GROUP'),
                         text=info,
                         parse_mode='Markdown')
+        logging.debug(f"Info Curah Hujan Sent")
     elif command == 'info_tma':
+        logging.debug(f"Preparing Info TMA")
         info = info_tma()
         bot = Bot(token=app.config.get('BWSSUL2BOT_TOKEN'))
         bot.sendMessage(app.config.get('BWS_SUL2_TELEMETRY_GROUP'),
                         text=(info),
                         parse_mode='Markdown')
+        logging.debug(f"Info TMA Sent")
     elif command == 'send':
         bot = Bot(token=app.config.get('BWSSUL2BOT_TOKEN'))
         bot.sendMessage(app.config.get('BWS_SUL2_TELEMETRY_GROUP'),
@@ -341,6 +345,8 @@ def build_tma():
         ret += "%s. %s" % (i, pos.nama)
         periodik = Periodik.query.filter(Periodik.lokasi_id ==
                               pos.id, Periodik.sampling <= now).order_by(desc(Periodik.sampling)).first()
+        if not periodik:
+            ret += " *TMA: Belum Ada Data\n"
         ret +=  " *TMA: %.2f Meter* jam %s\n" % (periodik.wlev * 0.01,
                                   periodik.sampling.strftime('%H:%M %d %b %Y'))
         i += 1
@@ -434,7 +440,7 @@ def on_mqtt_message(client, userdata, msg):
             periodik2pweb(periodik)
             logging.debug(f"{data.get('device')}, data recorded")
     except Exception as e:
-        logging.debug(f"Error : {e}")
+        logging.debug(f"Listen Error : {e}")
 
 
 def subscribe_topic():
@@ -469,7 +475,11 @@ def fetch_periodic(sn, sampling):
     sampling_param = ''
     if sampling:
         sampling_param = '&sampling=' + sampling
-    res = requests.get(URL + '/' + sn + '?robot=1' + sampling_param, auth=bws_sul2)
+    try:
+        res = requests.get(URL + '/' + sn + '?robot=1' + sampling_param, auth=bws_sul2)
+    except Exception as e:
+        logging.debug(f"Fetch Periodic Error : {e}")
+        return
     data = json.loads(res.text)
     for d in data:
         content = Raw(content=d)
@@ -626,7 +636,7 @@ def raw2periodic(raw):
 
 def periodik2pweb(data):
     # sending periodik to primaweb gto using api
-    url = "http://localhost:8888/api/periodik"
+    url = f"{os.environ['PWEB_URL']}/api/periodik"
     logging.debug("Sending data to primaweb")
 
     # format the datetime into string first
@@ -646,7 +656,7 @@ def periodik2pweb(data):
 @click.option('-s', '--sampling', default='', help='Awal waktu sampling')
 def send_periodic_today(sampling):
     # sending periodik to primaweb gto using api
-    url = "http://localhost:8888/api/periodik/bulk"
+    url = f"{os.environ['PWEB_URL']}/api/periodik/bulk"
 
     today = datetime.datetime.today()
     datestr = sampling or today.strftime("%Y-%m-%d")
@@ -685,8 +695,8 @@ def send_periodic_today(sampling):
                 'batt': per.batt,
                 'rain': per.rain,
                 'wlev': per.wlev,
-                'up_s': per.up_s.strftime("%Y-%m-%d %H:%M:%S"),
-                'ts_a': per.ts_a.strftime("%Y-%m-%d %H:%M:%S"),
+                'up_s': per.up_s.strftime("%Y-%m-%d %H:%M:%S") if per.up_s else None,
+                'ts_a': per.ts_a.strftime("%Y-%m-%d %H:%M:%S") if per.ts_a else None,
                 'apre': per.apre,
                 'mdpl': per.mdpl
             })
