@@ -5,12 +5,14 @@ Widoyo <widoyo@gmail.com>
 '''
 import datetime
 import requests
+import csv
+import io
 import os
 
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, Response
 from flask_login import login_required
 
-from sqlalchemy import text, func
+from sqlalchemy import text, func, extract
 
 from app.models import Device, Periodik, Lokasi
 from app.forms import LoggerSettingForm
@@ -52,16 +54,42 @@ def sync():
         db.session.commit()
 
         # send post data
+        try:
+            post_url = f"{os.environ['PWEB_URL']}/api/device"
+            post_data = {
+                'sn': f"{sn}",
+                'id': device.id
+            }
+            res = requests.post(post_url, data=post_data)
+            result = res.json()
+            print(result)
+        except Exception as e:
+            print(e)
+
+    return redirect(url_for('logger.index'))
+
+
+@bp.route('/<device_id>/sync')
+@login_required
+def syncpweb(device_id):
+    '''Showing all logger'''
+    log = Device.query.get(device_id)
+
+    # send post data
+    try:
         post_url = f"{os.environ['PWEB_URL']}/api/device"
         post_data = {
-            'sn': f"{sn}",
-            'id': device.id
+            'sn': f"{log.sn}",
+            'id': log.id,
+            'tipe': log.tipe
         }
         res = requests.post(post_url, data=post_data)
         result = res.json()
         print(result)
-
+    except Exception as e:
+        print(e)
     return redirect(url_for('logger.index'))
+
 
 @bp.route('/sehat')
 @login_required
@@ -130,6 +158,51 @@ def show(sn):
     return render_template('logger/show.html', device=device, form=form,
                            pagination=paginate,
                            month_list=[r[0] for r in monthly_download_list])
+
+@bp.route('/<sn>/csv')
+@login_required
+def download_csv(sn):
+    device = Device.query.filter_by(sn=sn).first_or_404()
+    sampling = request.args.get('sampling', None)
+    if sampling:
+        sampling = datetime.datetime.strptime(sampling, "%Y-%m-%d")
+    else:
+        sampling = datetime.datetime.now()
+
+    pre_csv = []
+    pre_csv.append([f"Data Periodik Logger {sn}"])
+    pre_csv.append([sampling.strftime("%d %B %Y")])
+    pre_csv.append([
+        'no', 'sampling',
+        'hujan (mm)' if device.tipe == 'arr' else 'TMA (M)',
+        'suhu','kelembaban','batt','sinyal'
+    ])
+
+    periodik = Periodik.query.filter(
+            Periodik.device_sn==sn,
+            extract('day', Periodik.sampling) == sampling.day,
+            extract('month', Periodik.sampling) == sampling.month,
+            extract('year', Periodik.sampling) == sampling.year
+        ).all()
+
+    for i, per in enumerate(periodik):
+        telemetri = per.rain if device.tipe == 'arr' else per.wlev
+        pre_csv.append([
+            i+1, per.sampling,
+            round(telemetri, 2) if telemetri else None,
+            per.temp, per.humi, per.batt, per.sq
+        ])
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter='\t')
+    for l in pre_csv:
+        writer.writerow(l)
+    output.seek(0)
+    return Response(output,
+                    mimetype="text/csv",
+                    headers={
+                        "Content-Disposition": f"attachment;filename=periodik_{sn}_{sampling.strftime('%d %B %Y')}.csv"
+                    })
 
 @bp.route('/add')
 def add():

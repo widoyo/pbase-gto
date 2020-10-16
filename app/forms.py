@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, DecimalField
-from wtforms import BooleanField, SubmitField, SelectField
+from wtforms import BooleanField, SubmitField, SelectField, RadioField
 from wtforms.validators import DataRequired
 
 from app.models import Lokasi
@@ -16,6 +16,15 @@ class LoginForm(FlaskForm):
 class LokasiForm(FlaskForm):
     nama = StringField('Nama Lokasi', validators=[DataRequired()])
     ll = StringField('Longitude,Latitude', validators=[DataRequired()])
+    jenis = RadioField('Jenis', choices=[
+                            ('1', 'Hujan'),
+                            ('2', 'Duga Air'),
+                            ('3', 'Kualitas Air'),
+                            ('4', 'Klimatologi')
+                        ], default='1')
+    siaga1 = DecimalField('Siaga 1 (cm)')
+    siaga2 = DecimalField('Siaga 2 (cm)')
+    siaga3 = DecimalField('Siaga 3 (cm)')
     submit = SubmitField('Tambah')
 
 
