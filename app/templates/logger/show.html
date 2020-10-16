@@ -1,8 +1,10 @@
 {% extends 'base_b.html' %}
 {% set active_page = 'logger' %}
+
 {% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 	<style>
-.data-telemetry td { font-family: monospace; }
+    .data-telemetry td { font-family: monospace; }
 	</style>
 {% endblock %}
 {% block content %}
@@ -18,7 +20,43 @@
 </section>
 <div class="row">
   <div class="col">
-		<h2>Data</h2>
+    <div>
+      <h2>
+        Data
+        <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#downloadModal">
+          Download
+        </button>
+      </h2>
+
+      <!-- Modal -->
+      <div class="modal fade" id="downloadModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">Pilih tanggal data periodik</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <button class="btn btn-outline-secondary" type="button" id="datepicker">
+                    <i class="fa fa-calendar"></i>
+                  </button>
+                </div>
+                <input type="text" id="sampling" class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1" disabled>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+              <a href="#" onclick="download_csv()" class="btn btn-primary">Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+		
 		<nav aria-label="Pagination">
     <ul class="pagination">
 			<li class="page-item">
@@ -131,3 +169,28 @@
   </div>
 </div>
 {% endblock content %}
+
+{% block extra_foot %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
+<script>
+  let sampling = Date();
+  moment.locale('id');
+  document.getElementById("sampling").value = moment(sampling).format('dddd') + ", " + moment(sampling).format('ll');
+  $('#datepicker').datepicker({
+    todayHighlight: true,
+    autoclose: true,
+    format: 'yyyy-mm-dd'
+  });
+  $('#datepicker').on('changeDate', function () {
+    sampling = $('#datepicker').datepicker('getFormattedDate');
+    document.getElementById("sampling").value = moment(sampling).format('dddd') + ", " + moment(sampling).format('ll');
+  });
+
+  function download_csv(){
+    let [date, month, year]    = moment(sampling).format('L').split("/");
+    window.open("{{ url_for('logger.download_csv', sn=device.sn) }}?sampling=" + `${year}-${month}-${date}`);
+  }
+</script>
+{% endblock %}
