@@ -19,7 +19,7 @@ bws_sul2 = ("bwssul2", "limboto1029")
 
 PBASE_API = "https://bwssul2-gorontalo.net/api"
 URL = "https://prinus.net/api/sensor"
-MQTT_HOST = "mqtt.bbws-bsolo.net"
+MQTT_HOST = "mqtt.prinus.net"
 MQTT_PORT = 14983
 MQTT_TOPIC = "bws-sul2"
 MQTT_CLIENT = ""
