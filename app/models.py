@@ -102,6 +102,10 @@ class Lokasi(db.Model):
     def __repr__(self):
         return '<Lokasi {}>'.format(self.nama)
 
+    @property
+    def periodik_count(self):
+        return Periodik.query.filter(Periodik.lokasi_id==self.id).count()
+
     def update_latest(self):
         '''Mengupdate field latest_sampling, latest_up, latest_id'''
         try:
