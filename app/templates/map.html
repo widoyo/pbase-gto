@@ -79,10 +79,21 @@
   });
 	var lokasi = [
     {% for l in lokasis %}
-    { id: {{ l.id }}, nama: '{{ l.nama }}', ll: [{{ l.ll }}],
-    devices: [{% for d in l.devices %}'{{ d.sn }}'{% endfor %}],
-    type: {% if 'AWLR' in l.nama %}'awlr'{% else %}'arr'{% endif %},
-				periodik: {sampling: '{{ '-' if not l.latest_periodik else l.latest_periodik.sampling }}', up_since: '{{ '-' if not l.latest_periodik else l.latest_periodik.up_s }}', {% if (l.jenis == '1' or l.jenis == '4') %}rain: {{ '-' if not l.latest_periodik else l.latest_periodik.rain or 'null'}}{% elif l.jenis == '2' %}wlevel: {{ '-' if not l.latest_periodik else l.latest_periodik.wlev }}{% endif %} } },
+    {
+      id: {{ l.id }},
+      nama: '{{ l.nama }}',
+      ll: [{{ l.ll }}],
+      devices: [{% for d in l.devices %}'{{ d.sn }}'{% endfor %}],
+      type: {% if 'AWLR' in l.nama %}'awlr'{% else %}'arr'{% endif %},
+			periodik: {
+        sampling: '{{ "-" if not l.latest_periodik else l.latest_periodik.sampling }}', up_since: '{{ "-" if not l.latest_periodik else l.latest_periodik.up_s }}',
+        {% if (l.jenis == '1' or l.jenis == '4') %}
+          rain: {{ 'null' if not l.latest_periodik else (l.latest_periodik.rain or 'null') }}
+        {% elif l.jenis == '2' %}
+          wlevel: {{ 'null' if not l.latest_periodik else (l.latest_periodik.wlev or 'null') }}
+        {% endif %}
+      }
+    },
     {% endfor %}
   ];
   lokasi.forEach(e => {
