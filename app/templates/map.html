@@ -82,7 +82,7 @@
     { id: {{ l.id }}, nama: '{{ l.nama }}', ll: [{{ l.ll }}],
     devices: [{% for d in l.devices %}'{{ d.sn }}'{% endfor %}],
     type: {% if 'AWLR' in l.nama %}'awlr'{% else %}'arr'{% endif %},
-				periodik: {sampling: '{{ '-' if not l.periodik else l.periodik[0].sampling }}', up_since: '{{ '-' if not l.periodik else l.periodik[0].up_s }}', {% if (l.jenis == '1' or l.jenis == '4') %}rain: {{ '-' if not l.periodik else l.periodik[0].rain or 'null'}}{% elif l.jenis == '2' %}wlevel: {{ '-' if not l.periodik else l.periodik[0].wlev }}{% endif %} } },
+				periodik: {sampling: '{{ '-' if not l.latest_periodik else l.latest_periodik.sampling }}', up_since: '{{ '-' if not l.latest_periodik else l.latest_periodik.up_s }}', {% if (l.jenis == '1' or l.jenis == '4') %}rain: {{ '-' if not l.latest_periodik else l.latest_periodik.rain or 'null'}}{% elif l.jenis == '2' %}wlevel: {{ '-' if not l.latest_periodik else l.latest_periodik.wlev }}{% endif %} } },
     {% endfor %}
   ];
   lokasi.forEach(e => {
