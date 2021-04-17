@@ -20,7 +20,7 @@ bws_sul2 = (os.environ['PRINUS_USER'], os.environ['PRINUS_PASS'])
 PBASE_API = "https://bwssul2-gorontalo.net/api"
 URL = "https://prinus.net/api/sensor"
 MQTT_HOST = os.environ["MQTT_HOST"]
-MQTT_PORT = os.environ["MQTT_PORT"]
+MQTT_PORT = int(os.environ["MQTT_PORT"])
 MQTT_TOPIC = os.environ["MQTT_TOPIC"]
 MQTT_CLIENT = ""
 
