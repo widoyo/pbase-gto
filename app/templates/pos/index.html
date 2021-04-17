@@ -25,14 +25,24 @@ _external=True) }}" role="button">Tambah</a></h1>
 {% for l in all_lokasi %}
 	<tr>
 		<td><span class="fas fa-map-marker-alt"></span> <a href="{{
+<<<<<<< HEAD
 		url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}info">Klimatologi{% elif l.jenis == '3' %}success">Kualitas Air{% else %}danger">?{% endif %}</span></td>
 		{% if l.latest_sampling %}<td class="text-right sampling" data-sampling="{{ l.latest_sampling }}" data-toggle="tooltip" title="{{ l.latest_sampling }}">{{ l.latest_sampling }}</td>{% else %}<td class="text-right">-</td>{% endif %}
 		{% if l.latest_up %}<td class="text-right sampling" data-sampling="{{ l.latest_up }}" data-toggle="tooltip" title="{{ l.latest_up}}">{{ l.latest_up }}</td>{% else %}<td class="text-right">-</td>{% endif %}
     <td class="text-right">{{ l.periodik_count }}</td>
+=======
+		url_for('pos.show', lokasi=l.id) }}">{{ l.nama }}</a> <span class="float-right badge badge-{% if l.jenis == '1' %}primary">ARR{% elif l.jenis == '2' %}danger">AWLR{% elif l.jenis == '4' %}warning">Klimatologi{% else %}danger">?{% endif %}</span></td>
+		<td class="text-right sampling" data-sampling="{{ l.latest_sampling }}" data-toggle="tooltip" title="{{ l.latest_sampling }}">{{ l.latest_sampling }}</td>
+		<td class="text-right sampling" data-sampling="{{ l.latest_up }}" data-toggle="tooltip" title="{{ l.latest_up}}">{{ l.latest_up }}</td>
+    <td class="text-right">{{ l.periodik|count }}</td>
+>>>>>>> 5099078ac4a03bc8db2727ac9e8169400284cb22
     <td>
-		<a class="btn btn-outline-success btn-sm" href="{{ url_for('pos.sync', lokasi_id=l.id, _external=True) }}">Update Primaweb</a>
-		<a class="btn btn-outline-primary btn-sm" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a>
-      	<a class="btn btn-outline-danger btn-sm" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a>
+	<i class="fas fa-ellipsis-v" id="dd-{{ l.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+  <div class="dropdown-menu" aria-labelledby="dd-{{ l.id }}">
+    <a class="dropdown-item" href="{{ url_for('pos.sync', lokasi_id=l.id, _external=True) }}">Update Primaweb</a>
+    <a class="dropdown-item" href="{{ url_for('pos.edit', lokasi_id=l.id, _external=True) }}">Edit</a>
+    <a class="dropdown-item" href="{{ url_for('pos.delete', lokasi_id=l.id, _external=True) }}">Delete</a>
+  </div>	
   	</td>
 	</tr>
 {% else %}

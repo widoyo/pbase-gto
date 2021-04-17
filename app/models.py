@@ -163,6 +163,9 @@ class Periodik(db.Model):
     wlev = db.Column(db.Float) # TMA dalam centi
     up_s = db.Column(db.DateTime) # Up Since
     ts_a = db.Column(db.DateTime) # Time Set at
+    wind_speed = db.Column(db.Float)
+    wind_dir = db.Column(db.String(2))
+    sun_rad = db.Column(db.Float)
     received = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     device = relationship("Device", back_populates="periodik")
     lokasi = relationship("Lokasi", back_populates="periodik")

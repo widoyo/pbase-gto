@@ -1,0 +1,201 @@
+{% extends 'base_b.html' %}
+{% set active_page = 'logger' %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+	<style>
+    .data-telemetry td { font-family: monospace; }
+	</style>
+{% endblock %}
+{% block content %}
+<section class="content-header">
+	<h1>{{ device.sn }} <small class="badge badge-warning">Klimatologi</small>
+<small class="text-small"><span uk-icon="icon: location"></span> <span>{{
+    device.lokasi.nama }}</span></small></h1>
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="/">Home</a></li>
+	<li class="breadcrumb-item"><a href="/logger">Logger</a></li>
+	<li class="breadcrumb-item">{{ device.sn }}</li>
+</ol>
+</section>
+<div class="row">
+  <div class="col">
+    <div>
+      <h2>
+        Data
+        <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#downloadModal">
+          Download
+        </button>
+      </h2>
+
+      <!-- Modal -->
+      <div class="modal fade" id="downloadModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">Pilih tanggal data periodik</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <button class="btn btn-outline-secondary" type="button" id="datepicker">
+                    <i class="fa fa-calendar"></i>
+                  </button>
+                </div>
+                <input type="text" id="sampling" class="form-control" placeholder="" aria-label="" aria-describedby="basic-addon1" disabled>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+              <a href="#" onclick="download_csv()" class="btn btn-primary">Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+		
+		<nav aria-label="Pagination">
+    <ul class="pagination">
+			<li class="page-item">
+				<a href="" class="page-link" aria-label="Prev"><span aria-hidden="true">&laquo;</span></a>
+			</li>
+        {%- for page in pagination.iter_pages() %}
+        {% if page %}
+          {% if page != pagination.page %}
+				<li class="page-item">
+            <a class="page-link" href="{{ url_for('logger.show', sn=device.sn, p=page) }}">{{ page }}</a>
+				</li>
+          {% else %}
+				<li class="page-item active" aria-current="page">
+            <a class="page-link" href="#" >{{ page }}</a>
+				</li>
+          {% endif %}
+        {% else %}
+          <span class=ellipsis>…</span>
+        {% endif %}
+				</li>
+      {%- endfor %}
+			<li class="page-item">
+				<a href="#" class="page-link" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+			</li>
+    </ul>
+		</nav>
+    <table class="table table-hover data-telemetry">
+			<thead>
+				<tr>
+					<th class="text-center">Sampling</th>
+					<th class="text-center">Hujan <small class="text-muted">(mm)</small></th>
+					<th class="text-center">Suhu <small class="text-muted">(&deg;C)</small></th>
+					<th class="text-center">Kelembaban <small class="text-muted">(%)</small></th>
+					<th class="text-center">Kec. Angin <small class="text-muted">(m/s)</small></th>
+					<th class="text-center">Arah Angin</th>
+					<th class="text-center">Radiasi Matahari <small class="text-muted">(J/m2)</small></th>
+					<th class="text-center">Batt <small class="text-muted">(V)</small></th>
+					<th class="text-center">Sinyal</th>
+				</tr>
+			</thead>
+			<tbody>
+    {% for i in pagination.items %}
+		<tr><td>{{ i.sampling }}</td>
+			<td class="text-right">{{ i.rain }}</td>
+			<td class="text-right">{{ '%0.1f'|format(i.temp|float) }}</td><td class="text-right">{{ '%0.1f'|format(i.humi|float) }}</td>
+			<td class="text-right">{{ '%0.1f'|format(i.wind_speed) }}</td><td class="text-right">{{ i.wind_dir }}</td>
+			<td class="text-right">{{ '%0.1f'|format(i.sun_rad|float) }}</td>
+			<td class="text-right">{{ '%0.1f'|format(i.batt|float) }}</td>
+			<td class="text-right">{{ i.sq }}</td></tr>
+    {% endfor %}
+			</tbody>
+    </table>
+  </div>
+  <div class="col col-md-3">
+		<h3>Data Terakhir</h3>
+    {{ month_list|length }}
+    <h3>Konfigurasi 
+      <a class="btn btn-outline-primary btn-sm float-right" data-toggle="collapse" role="button" href=".form-edit" aria-expanded="true" aria-controls="form-edit"><span uk-toggle="target: .form-edit" class="uk-align-right">edit</span></a></h3>
+    <div {% if form.errors %}hidden{% endif %} class="show form-edit">
+      <ul class="uk-list uk-list-divider">
+				<li>Lokasi: <b><span class="">{{ device.lokasi.nama }}</span></b></li>
+          {% if device.tipe == 'arr' %}
+          <li>Tipping Factor: <span class="uk-align-right">{{ device.tipp_fac }} mm</span></li>
+          {% endif %}
+          {% if device.tipe == 'awlr' %}
+        <li>Tinggi Sonar: <span class="uk-align-right">{{ device.ting_son }} cm</span></li>
+          {% endif %}
+        <li uk-tooltip="Koreksi temperatur, bisa berisi angka minus, jika hasil baca dari logger nilainya lebih tinggi dari nilai acuan"><b>Koreksi:</b></li>
+        <li>Suhu<span class="uk-align-right">{{ device.temp_cor }}
+            &deg;C</span></li>
+        <li>Kelembaban <span class="uk-align-right">{{ device.humi_cor }} %</span></li>
+        <li>Tegangan Battery <span class="uk-align-right">{{ device.batt_cor }}
+          volt</span></li>
+      </ul>
+    </div>
+    <div class="{% if not form.errors %}collapse{% endif %} form-edit">
+      <form method="POST" action="">
+        {{ form.csrf_token }}
+        {% if form.errors %}
+        <ul>
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+          {% for error in field_errors %}
+            <li>{{ form[field_name].label }}: {{ error }}
+          {% endfor %}
+        {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="form-group">
+					<label>Lokasi: {{ form.lokasi_id(class="form-control") }}</label>
+				</div>
+				<div class="form-group">
+            {% if device.tipe == 'arr' %}
+          Tipping Factor: <span class="float-right">{{ form.tipp_fac(size=3) }} mm</span>
+            {% endif %}
+            {% if device.tipe == 'awlr' %}
+          Tinggi Sonar: <span class="float-right">{{ form.ting_son(size=3) }} cm</span>
+            {% endif %}
+				</div>
+				<p title="Koreksi temperatur, bisa berisi angka minus, jika hasil baca dari logger nilainya lebih tinggi dari nilai acuan"><strong>Koreksi</strong></p>
+					<div class="form-group">Suhu (&deg;C)<span class="float-right">{{ form.temp_cor(size=2) }}
+              </div>
+					<div class="form-group">
+					Kelembaban (%)<span class="float-right">{{ form.humi_cor(size=2)
+              }}</span>
+					</div>
+					<div class="form-group">
+          Teg. Battery (volt)<span class="float-right">{{
+              form.batt_cor(size=2) }}</span>
+					</div>
+					<div class="form-group">
+          <input type="submit" value="Simpan" class="btn btn-primary" />
+					</div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_foot %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
+<script>
+  let sampling = Date();
+  moment.locale('id');
+  document.getElementById("sampling").value = moment(sampling).format('dddd') + ", " + moment(sampling).format('ll');
+  $('#datepicker').datepicker({
+    todayHighlight: true,
+    autoclose: true,
+    format: 'yyyy-mm-dd'
+  });
+  $('#datepicker').on('changeDate', function () {
+    sampling = $('#datepicker').datepicker('getFormattedDate');
+    document.getElementById("sampling").value = moment(sampling).format('dddd') + ", " + moment(sampling).format('ll');
+  });
+
+  function download_csv(){
+    let [date, month, year]    = moment(sampling).format('L').split("/");
+    window.open("{{ url_for('logger.download_csv', sn=device.sn) }}?sampling=" + `${year}-${month}-${date}`);
+  }
+</script>
+{% endblock %}
