@@ -128,6 +128,9 @@ def show(sn):
     per_page = int(request.args.get('n', 25))
     device = Device.query.filter_by(sn=sn).first_or_404()
     now = datetime.datetime.now()
+    template_file = 'logger/show.html'
+    if device.tipe == 'klimatologi':
+        template_file = 'logger/show_klimatologi.html'
     paginate = Periodik.query.filter(
         Periodik.device_sn == device.sn,
         Periodik.sampling <= now).order_by(
@@ -155,7 +158,7 @@ def show(sn):
         device.lokasi_id = int(form.lokasi_id.data)
         db.session.commit()
         return redirect(url_for('logger.show', sn=sn))
-    return render_template('logger/show.html', device=device, form=form,
+    return render_template(template_file, device=device, form=form,
                            pagination=paginate,
                            month_list=[r[0] for r in monthly_download_list])
 

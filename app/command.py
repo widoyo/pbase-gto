@@ -15,13 +15,13 @@ from telegram import Bot
 from app import app, db
 from app.models import Device, Raw, Periodik, Lokasi, Curahujan, Tma
 
-bws_sul2 = ("bwssul2", "limboto1029")
+bws_sul2 = (os.environ['PRINUS_USER'], os.environ['PRINUS_PASS'])
 
 PBASE_API = "https://bwssul2-gorontalo.net/api"
 URL = "https://prinus.net/api/sensor"
-MQTT_HOST = "mqtt.bbws-bsolo.net"
-MQTT_PORT = 14983
-MQTT_TOPIC = "bws-sul2"
+MQTT_HOST = os.environ["MQTT_HOST"]
+MQTT_PORT = os.environ["MQTT_PORT"]
+MQTT_TOPIC = os.environ["MQTT_TOPIC"]
 MQTT_CLIENT = ""
 
 logging.basicConfig(
@@ -601,6 +601,10 @@ def raw2periodic(raw):
         # 'distance' MB7366(mm) di centimeterkan
         wlev = (device.ting_son or 100) - raw.get('distance') * 0.1
         obj.update({'wlev': wlev})
+    obj = 'wind_speed' in raw and obj.update({'wind_speed': raw.get('wind_speed')}) or obj
+    obj = 'wind_direction' in raw and obj.update({'wind_dir': raw.get('wind_direction')}) or obj
+    obj = 'sun_radiation' in raw and obj.update({'sun_rad': raw.get('sun_radiation')}) or obj
+
     time_to = {'sampling': 'sampling',
                'up_since': 'up_s',
                'time_set_at': 'ts_a'}
@@ -611,13 +615,13 @@ def raw2periodic(raw):
                 'temperature': 'temp',
                 'battery': 'batt'}
     for k, v in time_to.items():
-        obj.update({v: datetime.datetime.fromtimestamp(raw.get(k))})
+        obj = k in raw and obj.update({v: datetime.datetime.fromtimestamp(raw.get(k))}) or obj
     for k, v in direct_to.items():
-        obj.update({v: raw.get(k)})
+        obj = k in raw and obj.update({v: raw.get(k)}) or obj
     for k, v in apply_to.items():
         if k in raw:
             corr = getattr(device, v + '_cor', 0) or 0
-            obj.update({v: raw.get(k) + corr})
+            obj = k in raw and obj.update({v: raw.get(k) + corr}) or obj
 
     try:
         d = Periodik(**obj)

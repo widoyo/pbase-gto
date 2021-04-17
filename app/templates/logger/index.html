@@ -32,13 +32,13 @@ _external=True) }}" role="button">Synchronize</a>
     <tr>
       <td><a href="{{ url_for('logger.show', sn=l.sn, _external=True)
       }}"><span uk-icon="database"></span> {{ l.sn }}</a></td>
-			<td><span class="badge badge-{% if l.tipe == 'arr' %}primary{% else %}danger{% endif %}">{{ l.tipe }}</span></td>
+			<td><span class="badge badge-{% if l.tipe == 'arr' %}primary{% elif l.tipe == 'kklimatologi' %}warning{% else %}danger{% endif %}">{{ l.tipe }}</span></td>
       <td>{{ l.lokasi.nama }}</td>
       <td>{{ l.periodik_latest().up_s }}</td>
       <td>{{ l.periodik_latest().sampling }}</td>
-      <td>{{ l.periodik.count() }}</td>
+      <td class="text-right">{{ l.periodik.count() }}</td>
       <th>
-          <a class="btn btn-outline-success btn-sm" href="{{ url_for('logger.syncpweb', device_id=l.id, _external=True) }}">Update Primaweb</a>
+          <a class="btn btn-outline-success btn-sm" href="{{ url_for('logger.syncpweb', device_id=l.id, _external=True) }}"><i class="fas fa-cloud-upload-alt" title="Update Primaweb"></i></a>
       </th>
     </tr>
 {% endfor %}
